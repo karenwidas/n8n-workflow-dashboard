@@ -5,41 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Workflow Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0f14;
-    --surface: #13161e;
-    --border: #1e2330;
-    --accent: #00e5b0;
-    --accent2: #3d7eff;
-    --warn: #ff6b35;
-    --text: #e8ecf4;
-    --muted: #5a6175;
-    --success: #00c97a;
-    --error: #ff4d6d;
-    --pending: #ffd166;
+    --bg: #f5f0eb;
+    --surface: #fffdf9;
+    --surface2: #f0ebe4;
+    --border: #e0d8cf;
+    --border-strong: #c8bdb0;
+    --chat-accent: #2d6a4f;
+    --chat-light: #e8f4ef;
+    --chat-border: #b7d5c8;
+    --form-accent: #5c4a8a;
+    --form-light: #ede9f6;
+    --form-border: #c4b8e0;
+    --text: #2a2118;
+    --text-secondary: #6b5d52;
+    --muted: #9e8e82;
+    --success: #2d6a4f;
+    --error: #c0392b;
+    --shadow: 0 2px 8px rgba(42,33,24,0.08);
+    --shadow-md: 0 4px 16px rgba(42,33,24,0.10);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'DM Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
   }
 
-  /* Subtle grid background */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,176,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,176,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23b8a898' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 0;
   }
@@ -47,34 +49,34 @@
   .header {
     position: relative;
     z-index: 1;
-    padding: 32px 40px 24px;
+    padding: 28px 40px 24px;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    box-shadow: var(--shadow);
   }
 
   .header-left h1 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    letter-spacing: -0.5px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 24px;
     color: var(--text);
+    letter-spacing: -0.3px;
   }
 
   .header-left p {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted);
-    margin-top: 4px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
+    margin-top: 3px;
   }
 
   .status-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 11px;
+    gap: 10px;
+    font-size: 12px;
     color: var(--muted);
   }
 
@@ -82,14 +84,28 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 2s infinite;
+    background: var(--success);
+    animation: pulse 2.5s infinite;
   }
 
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
   }
+
+  .refresh-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .refresh-btn:hover { background: var(--border); border-color: var(--border-strong); }
 
   .main {
     position: relative;
@@ -99,18 +115,15 @@
     margin: 0 auto;
   }
 
-  .group {
-    margin-bottom: 40px;
-  }
+  .group { margin-bottom: 40px; }
 
   .group-label {
-    font-family: 'Syne', sans-serif;
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 3px;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -132,9 +145,10 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    transition: border-color 0.2s, transform 0.2s;
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s, transform 0.2s;
     position: relative;
     overflow: hidden;
   }
@@ -142,30 +156,25 @@
   .card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--accent-color, var(--accent));
-    opacity: 0.7;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-accent, var(--chat-accent));
+    border-radius: 12px 12px 0 0;
   }
 
-  .card:hover {
-    border-color: var(--accent-color, var(--accent));
-    transform: translateY(-2px);
-  }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
   .card-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     gap: 12px;
   }
 
   .card-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text);
     line-height: 1.3;
@@ -173,44 +182,27 @@
 
   .card-type {
     font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 3px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
-  .type-form {
-    background: rgba(61,126,255,0.15);
-    color: var(--accent2);
-    border: 1px solid rgba(61,126,255,0.3);
-  }
+  .type-form { background: var(--form-light); color: var(--form-accent); border: 1px solid var(--form-border); }
+  .type-chat { background: var(--chat-light); color: var(--chat-accent); border: 1px solid var(--chat-border); }
 
-  .type-chat {
-    background: rgba(0,229,176,0.1);
-    color: var(--accent);
-    border: 1px solid rgba(0,229,176,0.25);
-  }
-
-  .card-meta {
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .card-meta span { color: var(--accent-color, var(--accent)); }
+  .card-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+  .card-meta strong { color: var(--card-accent, var(--chat-accent)); font-weight: 500; }
 
   .last-run {
-    font-size: 11px;
-    color: var(--muted);
+    font-size: 12px;
     margin-bottom: 16px;
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 4px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -218,20 +210,8 @@
     gap: 8px;
   }
 
-  .run-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .run-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .run-status { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; }
+  .run-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
   .status-success { color: var(--success); }
   .status-success .run-dot { background: var(--success); }
@@ -240,138 +220,57 @@
   .status-loading { color: var(--muted); }
   .status-loading .run-dot { background: var(--muted); animation: pulse 1s infinite; }
 
-  .run-time {
-    font-size: 10px;
-    color: var(--muted);
-    text-align: right;
-  }
+  .run-time { font-size: 11px; color: var(--muted); }
 
-  /* Form trigger button */
   .btn-launch {
-    display: block;
-    width: 100%;
-    padding: 10px 16px;
-    background: transparent;
-    border: 1px solid var(--accent-color, var(--accent));
-    color: var(--accent-color, var(--accent));
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    transition: background 0.15s, color 0.15s;
+    display: block; width: 100%; padding: 10px 16px;
+    background: var(--form-light); border: 1.5px solid var(--form-border);
+    color: var(--form-accent); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; text-align: center; text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
+  .btn-launch:hover { background: var(--form-accent); border-color: var(--form-accent); color: #fff; }
 
-  .btn-launch:hover {
-    background: var(--accent-color, var(--accent));
-    color: var(--bg);
-  }
-
-  /* Chat panel */
   .chat-toggle {
-    display: block;
-    width: 100%;
-    padding: 10px 16px;
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    transition: background 0.15s, color 0.15s;
+    display: block; width: 100%; padding: 10px 16px;
+    background: var(--chat-light); border: 1.5px solid var(--chat-border);
+    color: var(--chat-accent); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; text-align: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
-
-  .chat-toggle:hover {
-    background: var(--accent);
-    color: var(--bg);
-  }
+  .chat-toggle:hover { background: var(--chat-accent); border-color: var(--chat-accent); color: #fff; }
 
   .chat-panel {
-    display: none;
-    margin-top: 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    flex-direction: column;
-    height: 380px;
+    display: none; margin-top: 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; flex-direction: column; height: 380px;
   }
-
-  .chat-panel.open {
-    display: flex;
-  }
+  .chat-panel.open { display: flex; }
 
   .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: rgba(0,0,0,0.2);
+    flex: 1; overflow-y: auto; padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--surface2);
   }
-
   .chat-messages::-webkit-scrollbar { width: 4px; }
-  .chat-messages::-webkit-scrollbar-track { background: transparent; }
-  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
   .msg {
-    max-width: 85%;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
+    max-width: 85%; padding: 9px 13px; border-radius: 8px;
+    font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
   }
-
-  .msg.user {
-    align-self: flex-end;
-    background: rgba(61,126,255,0.2);
-    border: 1px solid rgba(61,126,255,0.3);
-    color: var(--text);
-  }
-
-  .msg.bot {
-    align-self: flex-start;
-    background: rgba(0,229,176,0.08);
-    border: 1px solid rgba(0,229,176,0.2);
-    color: var(--text);
-  }
-
-  .msg.system {
-    align-self: center;
-    background: transparent;
-    color: var(--muted);
-    font-size: 10px;
-    border: none;
-    padding: 4px 0;
-  }
+  .msg.user { align-self: flex-end; background: var(--form-light); border: 1px solid var(--form-border); color: var(--text); }
+  .msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--chat-border); color: var(--text); }
+  .msg.system { align-self: center; background: transparent; color: var(--muted); font-size: 11px; border: none; padding: 2px 0; font-style: italic; }
 
   .typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 10px 14px;
-    align-self: flex-start;
-    background: rgba(0,229,176,0.08);
-    border: 1px solid rgba(0,229,176,0.2);
-    border-radius: 4px;
+    display: flex; gap: 4px; padding: 10px 14px;
+    align-self: flex-start; background: var(--surface);
+    border: 1px solid var(--chat-border); border-radius: 8px;
   }
-
-  .typing-indicator span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: typing 1s infinite;
-  }
-
+  .typing-indicator span { width: 5px; height: 5px; border-radius: 50%; background: var(--chat-accent); animation: typing 1s infinite; }
   .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
   .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
@@ -380,63 +279,23 @@
     50% { opacity: 1; transform: translateY(-3px); }
   }
 
-  .chat-input-row {
-    display: flex;
-    gap: 0;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-  }
+  .chat-input-row { display: flex; border-top: 1px solid var(--border); background: var(--surface); }
 
   .chat-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    padding: 10px 14px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    outline: none;
-    resize: none;
+    flex: 1; background: transparent; border: none;
+    padding: 11px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    outline: none; resize: none;
   }
-
   .chat-input::placeholder { color: var(--muted); }
 
   .chat-send {
-    background: transparent;
-    border: none;
-    border-left: 1px solid var(--border);
-    padding: 10px 14px;
-    color: var(--accent);
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: background 0.15s;
+    background: transparent; border: none; border-left: 1px solid var(--border);
+    padding: 11px 16px; color: var(--chat-accent);
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; transition: background 0.15s;
   }
-
-  .chat-send:hover { background: rgba(0,229,176,0.1); }
-
-  .refresh-btn {
-    background: transparent;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    padding: 2px 6px;
-    border-radius: 3px;
-    transition: color 0.15s;
-  }
-
-  .refresh-btn:hover { color: var(--accent); }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .spinning { display: inline-block; animation: spin 1s linear infinite; }
+  .chat-send:hover { background: var(--chat-light); }
 </style>
 </head>
 <body>
@@ -449,63 +308,47 @@
   <div class="status-bar">
     <div class="status-dot"></div>
     <span id="last-refreshed">Fetching status…</span>
-    <button class="refresh-btn" onclick="refreshAll()" title="Refresh all statuses">↻ refresh</button>
+    <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
   </div>
 </header>
 
 <main class="main">
 
-  <!-- GROUP: Data Processing -->
   <div class="group">
     <div class="group-label">Data Processing</div>
     <div class="cards">
-
-      <!-- TSYS Spreadsheet Comparison -->
-      <div class="card" style="--accent-color: var(--accent2);">
+      <div class="card" style="--card-accent: var(--form-accent);">
         <div class="card-header">
           <div class="card-title">TSYS Spreadsheet Comparison</div>
           <span class="card-type type-form">Form</span>
         </div>
-        <div class="card-meta">Output: <span>Email</span></div>
+        <div class="card-meta">Output: <strong>Email</strong></div>
         <div class="last-run" id="status-LoDZG07dKmT63tfz">
-          <div class="run-status status-loading">
-            <div class="run-dot"></div>
-            <span>Loading…</span>
-          </div>
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
           <div class="run-time">—</div>
         </div>
-        <a class="btn-launch" style="--accent-color: var(--accent2); border-color: var(--accent2); color: var(--accent2);"
-           href="https://karenwidas.app.n8n.cloud/form/39ce71f6-7b67-485c-9f25-fbeb8fd1558e"
-           target="_blank">↗ Open Form</a>
+        <a class="btn-launch" href="https://karenwidas.app.n8n.cloud/form/39ce71f6-7b67-485c-9f25-fbeb8fd1558e" target="_blank">↗ Open Form</a>
       </div>
-
     </div>
   </div>
 
-  <!-- GROUP: Zoho CRM -->
   <div class="group">
     <div class="group-label">Zoho CRM</div>
     <div class="cards">
 
-      <!-- Get Merchant Info -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">Get Merchant Info</div>
           <span class="card-type type-chat">Chat</span>
         </div>
-        <div class="card-meta">Output: <span>Chat</span></div>
+        <div class="card-meta">Output: <strong>Chat</strong></div>
         <div class="last-run" id="status-rr62qcLtgHBjEMaeZgk48">
-          <div class="run-status status-loading">
-            <div class="run-dot"></div>
-            <span>Loading…</span>
-          </div>
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
           <div class="run-time">—</div>
         </div>
         <button class="chat-toggle" onclick="toggleChat('chat-rr62qcLtgHBjEMaeZgk48')">⌘ Open Chat</button>
         <div class="chat-panel" id="chat-rr62qcLtgHBjEMaeZgk48" data-url="https://karenwidas.app.n8n.cloud/webhook/e69696cc-171c-4f40-a81c-4f9865bcfeb1/chat">
-          <div class="chat-messages">
-            <div class="msg system">Session started. Ask about a merchant.</div>
-          </div>
+          <div class="chat-messages"><div class="msg system">Session started. Ask about a merchant.</div></div>
           <div class="chat-input-row">
             <textarea class="chat-input" rows="1" placeholder="Type a message…" onkeydown="handleKey(event, this)"></textarea>
             <button class="chat-send" onclick="sendMessage(this)">Send</button>
@@ -513,25 +356,19 @@
         </div>
       </div>
 
-      <!-- Edit Merchant Info -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">Edit Merchant Info</div>
           <span class="card-type type-chat">Chat</span>
         </div>
-        <div class="card-meta">Output: <span>Confirmation via Chat</span></div>
+        <div class="card-meta">Output: <strong>Confirmation via Chat</strong></div>
         <div class="last-run" id="status-pwA_Z_BMHOlsLLVgBpBll">
-          <div class="run-status status-loading">
-            <div class="run-dot"></div>
-            <span>Loading…</span>
-          </div>
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
           <div class="run-time">—</div>
         </div>
         <button class="chat-toggle" onclick="toggleChat('chat-pwA_Z_BMHOlsLLVgBpBll')">⌘ Open Chat</button>
         <div class="chat-panel" id="chat-pwA_Z_BMHOlsLLVgBpBll" data-url="https://karenwidas.app.n8n.cloud/webhook/3b292f9b-6d8c-4f07-8e18-5f0e638c7e88/chat">
-          <div class="chat-messages">
-            <div class="msg system">Session started. Describe the edits to make.</div>
-          </div>
+          <div class="chat-messages"><div class="msg system">Session started. Describe the edits to make.</div></div>
           <div class="chat-input-row">
             <textarea class="chat-input" rows="1" placeholder="Type a message…" onkeydown="handleKey(event, this)"></textarea>
             <button class="chat-send" onclick="sendMessage(this)">Send</button>
@@ -542,30 +379,23 @@
     </div>
   </div>
 
-  <!-- GROUP: Knowledge Base -->
   <div class="group">
     <div class="group-label">Knowledge Base</div>
     <div class="cards">
 
-      <!-- KB Processor Info -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">KB Processor Info</div>
           <span class="card-type type-chat">Chat</span>
         </div>
-        <div class="card-meta">Output: <span>Chat</span></div>
+        <div class="card-meta">Output: <strong>Chat</strong></div>
         <div class="last-run" id="status-9GacF-ENq9gJros7yszgp">
-          <div class="run-status status-loading">
-            <div class="run-dot"></div>
-            <span>Loading…</span>
-          </div>
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
           <div class="run-time">—</div>
         </div>
         <button class="chat-toggle" onclick="toggleChat('chat-9GacF-ENq9gJros7yszgp')">⌘ Open Chat</button>
         <div class="chat-panel" id="chat-9GacF-ENq9gJros7yszgp" data-url="https://karenwidas.app.n8n.cloud/webhook/f6d78f6f-7b7b-4d60-8f1f-c22de508dabb/chat">
-          <div class="chat-messages">
-            <div class="msg system">Session started. Ask about processor info.</div>
-          </div>
+          <div class="chat-messages"><div class="msg system">Session started. Ask about processor info.</div></div>
           <div class="chat-input-row">
             <textarea class="chat-input" rows="1" placeholder="Type a message…" onkeydown="handleKey(event, this)"></textarea>
             <button class="chat-send" onclick="sendMessage(this)">Send</button>
@@ -579,10 +409,6 @@
 </main>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const N8N_BASE = 'https://karenwidas.app.n8n.cloud';
-
-
 const WORKFLOWS = [
   { id: 'LoDZG07dKmT63tfz',       statusEl: 'status-LoDZG07dKmT63tfz' },
   { id: 'rr62qcLtgHBjEMaeZgk48',  statusEl: 'status-rr62qcLtgHBjEMaeZgk48' },
@@ -590,11 +416,8 @@ const WORKFLOWS = [
   { id: '9GacF-ENq9gJros7yszgp',   statusEl: 'status-9GacF-ENq9gJros7yszgp' },
 ];
 
-// ─── STATUS FETCHING ──────────────────────────────────────────────────────────
 async function fetchLastExecution(workflowId) {
-  const res = await fetch(
-    `https://karenwidas.app.n8n.cloud/webhook/n8n-status-proxy?workflowId=${workflowId}`
-  );
+  const res = await fetch(`https://karenwidas.app.n8n.cloud/webhook/n8n-status-proxy?workflowId=${workflowId}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   return data.data?.[0] ?? null;
@@ -613,57 +436,41 @@ function formatTimeAgo(isoString) {
 function renderStatus(elId, exec) {
   const el = document.getElementById(elId);
   if (!el) return;
-
   if (!exec) {
-    el.innerHTML = `
-      <div class="run-status status-loading">
-        <div class="run-dot"></div><span>No runs found</span>
-      </div>
-      <div class="run-time">—</div>`;
+    el.innerHTML = `<div class="run-status status-loading"><div class="run-dot"></div><span>No runs found</span></div><div class="run-time">—</div>`;
     return;
   }
-
   const success = exec.status === 'success';
-  const statusClass = success ? 'status-success' : 'status-error';
   const label = success ? 'Success' : (exec.status ?? 'Unknown');
   const time = exec.startedAt ? formatTimeAgo(exec.startedAt) : '—';
-
-  el.innerHTML = `
-    <div class="run-status ${statusClass}">
-      <div class="run-dot"></div><span>${label}</span>
-    </div>
-    <div class="run-time">${time}</div>`;
+  el.innerHTML = `<div class="run-status ${success ? 'status-success' : 'status-error'}"><div class="run-dot"></div><span>${label}</span></div><div class="run-time">${time}</div>`;
 }
 
 async function refreshAll() {
   document.getElementById('last-refreshed').textContent = 'Refreshing…';
   await Promise.all(WORKFLOWS.map(async ({ id, statusEl }) => {
-    try {
-      const exec = await fetchLastExecution(id);
-      renderStatus(statusEl, exec);
-    } catch (e) {
+    try { renderStatus(statusEl, await fetchLastExecution(id)); }
+    catch (e) {
       const el = document.getElementById(statusEl);
       if (el) el.innerHTML = `<div class="run-status status-error"><div class="run-dot"></div><span>Error</span></div><div class="run-time">—</div>`;
     }
   }));
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('last-refreshed').textContent = `Updated ${now}`;
+  document.getElementById('last-refreshed').textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-// ─── CHAT ─────────────────────────────────────────────────────────────────────
-// Per-panel session IDs so n8n can track conversation context
 const sessions = {};
 
 function toggleChat(panelId) {
   const panel = document.getElementById(panelId);
+  const opening = !panel.classList.contains('open');
   panel.classList.toggle('open');
+  if (opening) setTimeout(() => panel.querySelector('.chat-input').focus(), 50);
 }
 
 function handleKey(e, textarea) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    const btn = textarea.closest('.chat-input-row').querySelector('.chat-send');
-    sendMessage(btn);
+    sendMessage(textarea.closest('.chat-input-row').querySelector('.chat-send'));
   }
 }
 
@@ -671,7 +478,6 @@ async function sendMessage(btn) {
   const row = btn.closest('.chat-input-row');
   const panel = btn.closest('.chat-panel');
   const panelId = panel.id;
-  const webhookUrl = panel.dataset.url;
   const textarea = row.querySelector('.chat-input');
   const text = textarea.value.trim();
   if (!text) return;
@@ -679,43 +485,31 @@ async function sendMessage(btn) {
   textarea.value = '';
   const messages = panel.querySelector('.chat-messages');
 
-  // Append user message
   const userMsg = document.createElement('div');
   userMsg.className = 'msg user';
   userMsg.textContent = text;
   messages.appendChild(userMsg);
 
-  // Typing indicator
   const typing = document.createElement('div');
   typing.className = 'typing-indicator';
   typing.innerHTML = '<span></span><span></span><span></span>';
   messages.appendChild(typing);
   messages.scrollTop = messages.scrollHeight;
 
-  // Session ID for this panel
   if (!sessions[panelId]) sessions[panelId] = crypto.randomUUID();
 
   try {
-    const res = await fetch(webhookUrl, {
+    const res = await fetch(panel.dataset.url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chatInput: text,
-        sessionId: sessions[panelId]
-      })
+      body: JSON.stringify({ chatInput: text, sessionId: sessions[panelId] })
     });
-
     typing.remove();
-
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
-    // n8n chat typically returns { output: "..." } or { response: "..." }
-    const reply = data.output ?? data.response ?? data.text ?? JSON.stringify(data);
-
     const botMsg = document.createElement('div');
     botMsg.className = 'msg bot';
-    botMsg.textContent = reply;
+    botMsg.textContent = data.output ?? data.response ?? data.text ?? JSON.stringify(data);
     messages.appendChild(botMsg);
   } catch (e) {
     typing.remove();
@@ -726,12 +520,10 @@ async function sendMessage(btn) {
   }
 
   messages.scrollTop = messages.scrollHeight;
+  textarea.focus();
 }
 
-
-// ─── INIT ─────────────────────────────────────────────────────────────────────
 refreshAll();
-// Auto-refresh every 5 minutes
 setInterval(refreshAll, 300000);
 </script>
 </body>
