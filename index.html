@@ -450,7 +450,6 @@
     <div class="status-dot"></div>
     <span id="last-refreshed">Fetching status…</span>
     <button class="refresh-btn" onclick="refreshAll()" title="Refresh all statuses">↻ refresh</button>
-    <button class="refresh-btn" onclick="clearKey()" title="Reset API key">⚙ reset key</button>
   </div>
 </header>
 
@@ -583,20 +582,6 @@
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const N8N_BASE = 'https://karenwidas.app.n8n.cloud';
 
-function getApiKey() {
-  return localStorage.getItem('n8n_api_key');
-}
-
-function promptForKey() {
-  const key = prompt('Enter your n8n API key:');
-  if (key && key.trim()) {
-    localStorage.setItem('n8n_api_key', key.trim());
-    return key.trim();
-  }
-  return null;
-}
-
-const API_KEY = getApiKey() || promptForKey();
 
 const WORKFLOWS = [
   { id: 'LoDZG07dKmT63tfz',       statusEl: 'status-LoDZG07dKmT63tfz' },
@@ -608,8 +593,7 @@ const WORKFLOWS = [
 // ─── STATUS FETCHING ──────────────────────────────────────────────────────────
 async function fetchLastExecution(workflowId) {
   const res = await fetch(
-    `${N8N_BASE}/api/v1/executions?workflowId=${workflowId}&limit=1`,
-    { headers: { 'X-N8N-API-KEY': API_KEY } }
+    `https://karenwidas.app.n8n.cloud/webhook/n8n-status-proxy?workflowId=${workflowId}`
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
@@ -744,10 +728,6 @@ async function sendMessage(btn) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-function clearKey() {
-  localStorage.removeItem('n8n_api_key');
-  location.reload();
-}
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 refreshAll();
