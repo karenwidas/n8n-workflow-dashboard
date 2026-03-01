@@ -296,6 +296,101 @@
     font-size: 13px; font-weight: 600; transition: background 0.15s;
   }
   .chat-send:hover { background: var(--chat-light); }
+
+  /* Ticket Form */
+  --ticket-accent: #7a3e1a;
+  --ticket-light: #fdf0e8;
+  --ticket-border: #e8c9af;
+
+  .type-ticket { background: #fdf0e8; color: #7a3e1a; border: 1px solid #e8c9af; }
+
+  .ticket-toggle {
+    display: block; width: 100%; padding: 10px 16px;
+    background: #fdf0e8; border: 1.5px solid #e8c9af;
+    color: #7a3e1a; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; text-align: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .ticket-toggle:hover { background: #7a3e1a; border-color: #7a3e1a; color: #fff; }
+
+  .ticket-panel {
+    display: none; margin-top: 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; background: var(--surface2);
+    padding: 16px;
+  }
+  .ticket-panel.open { display: block; }
+
+  .ticket-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ticket-form-grid .full { grid-column: 1 / -1; }
+
+  .ticket-label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--text-secondary); margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+
+  .ticket-input, .ticket-select, .ticket-textarea {
+    width: 100%; padding: 8px 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .ticket-input:focus, .ticket-select:focus, .ticket-textarea:focus {
+    border-color: #7a3e1a;
+  }
+  .ticket-textarea { resize: vertical; min-height: 60px; }
+
+  .tasks-section { margin-top: 12px; }
+  .tasks-label {
+    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .add-task-btn {
+    font-size: 11px; font-weight: 600; color: #7a3e1a;
+    background: none; border: none; cursor: pointer; padding: 0;
+  }
+  .add-task-btn:hover { text-decoration: underline; }
+
+  .task-row {
+    display: grid; grid-template-columns: 1fr auto auto auto;
+    gap: 6px; align-items: center; margin-bottom: 6px;
+  }
+  .task-row input { padding: 7px 10px; }
+  .task-row select { padding: 7px 6px; font-size: 12px; }
+  .task-row input[type="date"] { padding: 6px 8px; font-size: 12px; }
+
+  .remove-task-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 16px; padding: 0 4px;
+    line-height: 1;
+  }
+  .remove-task-btn:hover { color: var(--error); }
+
+  .ticket-submit {
+    display: block; width: 100%; margin-top: 14px;
+    padding: 10px 16px; background: #7a3e1a;
+    border: none; color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .ticket-submit:hover { opacity: 0.88; }
+  .ticket-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .ticket-feedback {
+    margin-top: 10px; font-size: 12px; text-align: center;
+    padding: 8px; border-radius: 6px; display: none;
+  }
+  .ticket-feedback.success { background: #e8f4ef; color: var(--success); display: block; }
+  .ticket-feedback.error { background: #fdecea; color: var(--error); display: block; }
 </style>
 </head>
 <body>
@@ -373,6 +468,81 @@
             <textarea class="chat-input" rows="1" placeholder="Type a message…" onkeydown="handleKey(event, this)"></textarea>
             <button class="chat-send" onclick="sendMessage(this)">Send</button>
           </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-label">Help Desk</div>
+    <div class="cards">
+
+      <div class="card" style="--card-accent: #7a3e1a;">
+        <div class="card-header">
+          <div class="card-title">Log a Ticket</div>
+          <span class="card-type type-ticket">Form</span>
+        </div>
+        <div class="card-meta">Output: <strong>Airtable</strong></div>
+        <button class="ticket-toggle" onclick="toggleTicket('ticket-panel')">✎ New Ticket</button>
+        <div class="ticket-panel" id="ticket-panel">
+          <div class="ticket-form-grid">
+            <div>
+              <label class="ticket-label">Company</label>
+              <input class="ticket-input" id="t-company" type="text" placeholder="Start typing merchant name…">
+            </div>
+            <div>
+              <label class="ticket-label">Contact</label>
+              <input class="ticket-input" id="t-contact" type="text" placeholder="Contact name (optional)">
+            </div>
+            <div>
+              <label class="ticket-label">Type</label>
+              <select class="ticket-select" id="t-type">
+                <option value="Support Issue">Support Issue</option>
+                <option value="Internal To-Do">Internal To-Do</option>
+              </select>
+            </div>
+            <div>
+              <label class="ticket-label">Priority</label>
+              <select class="ticket-select" id="t-priority">
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+            <div>
+              <label class="ticket-label">Channel</label>
+              <select class="ticket-select" id="t-channel">
+                <option value="Phone">Phone</option>
+                <option value="Email">Email</option>
+                <option value="Text">Text</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="full">
+              <label class="ticket-label">Subject</label>
+              <input class="ticket-input" id="t-subject" type="text" placeholder="Brief summary">
+            </div>
+            <div class="full">
+              <label class="ticket-label">Description</label>
+              <textarea class="ticket-textarea" id="t-description" placeholder="Details, context, background…"></textarea>
+            </div>
+            <div class="full">
+              <label class="ticket-label">Next Task</label>
+              <input class="ticket-input" id="t-next-task" type="text" placeholder="What needs to happen next?">
+            </div>
+          </div>
+
+          <div class="tasks-section">
+            <div class="tasks-label">
+              Tasks
+              <button class="add-task-btn" onclick="addTaskRow()">+ Add Task</button>
+            </div>
+            <div id="task-rows"></div>
+          </div>
+
+          <button class="ticket-submit" onclick="submitTicket()">Submit Ticket</button>
+          <div class="ticket-feedback" id="ticket-feedback"></div>
         </div>
       </div>
 
@@ -521,6 +691,114 @@ async function sendMessage(btn) {
 
   messages.scrollTop = messages.scrollHeight;
   textarea.focus();
+}
+
+// Ticket form
+const TICKET_WEBHOOK = 'https://karenwidas.app.n8n.cloud/webhook/create-ticket';
+
+function toggleTicket(panelId) {
+  const panel = document.getElementById(panelId);
+  const opening = !panel.classList.contains('open');
+  panel.classList.toggle('open');
+  if (opening) {
+    if (document.getElementById('task-rows').children.length === 0) addTaskRow();
+    setTimeout(() => document.getElementById('t-company').focus(), 50);
+  }
+}
+
+let taskCount = 0;
+function addTaskRow() {
+  taskCount++;
+  const id = taskCount;
+  const row = document.createElement('div');
+  row.className = 'task-row';
+  row.id = `task-row-${id}`;
+  row.innerHTML = `
+    <input class="ticket-input" type="text" placeholder="Task description" id="task-desc-${id}">
+    <input class="ticket-input" type="number" placeholder="Order" id="task-order-${id}" value="${id}" style="width:64px">
+    <input class="ticket-input" type="date" id="task-due-${id}">
+    <button class="remove-task-btn" onclick="removeTaskRow(${id})">×</button>
+  `;
+  document.getElementById('task-rows').appendChild(row);
+}
+
+function removeTaskRow(id) {
+  const row = document.getElementById(`task-row-${id}`);
+  if (row) row.remove();
+}
+
+async function submitTicket() {
+  const company = document.getElementById('t-company').value.trim();
+  const subject = document.getElementById('t-subject').value.trim();
+  if (!company || !subject) {
+    showFeedback('Company and Subject are required.', 'error');
+    return;
+  }
+
+  const tasks = [];
+  document.querySelectorAll('.task-row').forEach(row => {
+    const idMatch = row.id.match(/task-row-(\d+)/);
+    if (!idMatch) return;
+    const n = idMatch[1];
+    const desc = document.getElementById(`task-desc-${n}`)?.value.trim();
+    if (desc) {
+      tasks.push({
+        task: desc,
+        order: parseInt(document.getElementById(`task-order-${n}`)?.value) || 1,
+        due_date: document.getElementById(`task-due-${n}`)?.value || '',
+        notes: ''
+      });
+    }
+  });
+
+  const payload = {
+    company:     company,
+    contact:     document.getElementById('t-contact').value.trim(),
+    type:        document.getElementById('t-type').value,
+    priority:    document.getElementById('t-priority').value,
+    channel:     document.getElementById('t-channel').value,
+    subject:     subject,
+    description: document.getElementById('t-description').value.trim(),
+    next_task:   document.getElementById('t-next-task').value.trim(),
+    tasks
+  };
+
+  const btn = document.querySelector('.ticket-submit');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const res = await fetch(TICKET_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showFeedback('Ticket created successfully.', 'success');
+    resetTicketForm();
+  } catch (e) {
+    showFeedback(`Error: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Ticket';
+  }
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById('ticket-feedback');
+  el.textContent = msg;
+  el.className = `ticket-feedback ${type}`;
+}
+
+function resetTicketForm() {
+  ['t-company','t-contact','t-subject','t-description','t-next-task'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('t-type').value = 'Support Issue';
+  document.getElementById('t-priority').value = 'Normal';
+  document.getElementById('t-channel').value = 'Phone';
+  document.getElementById('task-rows').innerHTML = '';
+  taskCount = 0;
 }
 
 refreshAll();
