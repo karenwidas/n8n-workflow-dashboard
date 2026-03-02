@@ -772,7 +772,8 @@ async function searchCompanies(q) {
 }
 
 function selectCompany(id, name) {
-  document.getElementById('t-company').value = name;
+  const input = document.getElementById('t-company');
+  input.value = name;
   document.getElementById('t-company-id').value = id;
   closeDropdown('company-dropdown');
   loadContacts(id);
@@ -780,17 +781,25 @@ function selectCompany(id, name) {
 
 // --- Typeahead: Contact ---
 async function loadContacts(companyId) {
-  const input = document.getElementById('t-contact');
-  input.disabled = false;
-  input.placeholder = 'Loading contacts…';
+  const contactInput = document.getElementById('t-contact');
+  contactInput.disabled = false;
+  contactInput.placeholder = 'Loading contacts…';
+  contactInput.value = '';
+  document.getElementById('t-contact-id').value = '';
   try {
     const res = await fetch(`${GET_CONTACTS_URL}?company_id=${companyId}`);
     const data = await res.json();
-    input.placeholder = data.length ? 'Select a contact…' : 'No contacts found';
-    input._contacts = data;
+    contactInput._contacts = data;
+    if (data.length) {
+      contactInput.value = data[0].name;
+      document.getElementById('t-contact-id').value = data[0].id;
+      contactInput.placeholder = 'Select a contact…';
+    } else {
+      contactInput.placeholder = 'No contacts found';
+    }
   } catch(e) {
-    input.placeholder = 'Error loading contacts';
-    input._contacts = [];
+    contactInput.placeholder = 'Error loading contacts';
+    contactInput._contacts = [];
   }
 }
 
