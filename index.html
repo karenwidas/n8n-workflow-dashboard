@@ -746,7 +746,10 @@ document.getElementById('t-company').addEventListener('input', function() {
 });
 
 document.getElementById('t-company').addEventListener('blur', function() {
-  setTimeout(() => closeDropdown('company-dropdown'), 150);
+  setTimeout(() => {
+    if (!companyJustSelected) closeDropdown('company-dropdown');
+    companyJustSelected = false;
+  }, 150);
 });
 
 async function searchCompanies(q) {
@@ -771,7 +774,9 @@ async function searchCompanies(q) {
   }
 }
 
+let companyJustSelected = false;
 function selectCompany(id, name) {
+  companyJustSelected = true;
   const input = document.getElementById('t-company');
   input.value = name;
   document.getElementById('t-company-id').value = id;
