@@ -26,6 +26,9 @@
     --error: #c0392b;
     --shadow: 0 2px 8px rgba(42,33,24,0.08);
     --shadow-md: 0 4px 16px rgba(42,33,24,0.10);
+    --obsidian-accent: #4a3b7a;
+    --obsidian-light: #edeaf6;
+    --obsidian-border: #c5bce0;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -406,6 +409,61 @@
   }
   .typeahead-item:hover, .typeahead-item.active { background: #fdf0e8; color: #7a3e1a; }
   .typeahead-empty { padding: 8px 12px; font-size: 12px; color: var(--muted); font-style: italic; }
+
+  /* CoWork → Obsidian */
+  .type-obsidian { background: var(--obsidian-light); color: var(--obsidian-accent); border: 1px solid var(--obsidian-border); }
+
+  .obsidian-toggle {
+    display: block; width: 100%; padding: 10px 16px;
+    background: var(--obsidian-light); border: 1.5px solid var(--obsidian-border);
+    color: var(--obsidian-accent); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; text-align: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .obsidian-toggle:hover { background: var(--obsidian-accent); border-color: var(--obsidian-accent); color: #fff; }
+
+  .obsidian-panel {
+    display: none; margin-top: 12px;
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; background: var(--surface2);
+    padding: 16px;
+  }
+  .obsidian-panel.open { display: block; }
+
+  .obsidian-label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--text-secondary); margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+
+  .obsidian-input, .obsidian-textarea {
+    width: 100%; padding: 8px 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    outline: none; transition: border-color 0.15s;
+    margin-bottom: 10px;
+  }
+  .obsidian-input:focus, .obsidian-textarea:focus { border-color: var(--obsidian-accent); }
+  .obsidian-textarea { resize: vertical; min-height: 160px; font-size: 12px; line-height: 1.5; }
+
+  .obsidian-submit {
+    display: block; width: 100%; margin-top: 4px;
+    padding: 10px 16px; background: var(--obsidian-accent);
+    border: none; color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .obsidian-submit:hover { opacity: 0.88; }
+  .obsidian-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .obsidian-feedback {
+    margin-top: 10px; font-size: 12px; text-align: center;
+    padding: 8px; border-radius: 6px; display: none;
+  }
+  .obsidian-feedback.success { background: var(--obsidian-light); color: var(--obsidian-accent); display: block; }
+  .obsidian-feedback.error { background: #fdecea; color: var(--error); display: block; }
 </style>
 </head>
 <body>
@@ -443,47 +501,33 @@
   </div>
 
   <div class="group">
-    <div class="group-label">Zoho CRM</div>
+    <div class="group-label">CRM</div>
     <div class="cards">
 
-      <div class="card">
+      <div class="card" style="--card-accent: #1a5c8a;">
         <div class="card-header">
-          <div class="card-title">Get Merchant Info</div>
-          <span class="card-type type-chat">Chat</span>
+          <div class="card-title">Merchant Lookup</div>
+          <span class="card-type" style="background:#e3f0f8;color:#1a5c8a;border:1px solid #a8cfe0;">Airtable</span>
         </div>
-        <div class="card-meta">Output: <strong>Chat</strong></div>
-        <div class="last-run" id="status-rr62qcLtgHBjEMaeZgk48">
-          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
-          <div class="run-time">—</div>
+        <div class="card-meta">Search · select · view &amp; edit in Airtable</div>
+        <div style="position:relative;margin-bottom:10px;" id="merchant-wrap">
+          <input
+            id="merchant-search"
+            class="ticket-input"
+            type="text"
+            placeholder="Type merchant name…"
+            autocomplete="off"
+            style="width:100%;border-color:#a8cfe0;"
+          />
+          <div class="typeahead-dropdown" id="merchant-dropdown" style="--hover-bg:#e3f0f8;--hover-color:#1a5c8a;"></div>
         </div>
-        <button class="chat-toggle" onclick="toggleChat('chat-rr62qcLtgHBjEMaeZgk48')">⌘ Open Chat</button>
-        <div class="chat-panel" id="chat-rr62qcLtgHBjEMaeZgk48" data-url="https://karenwidas.app.n8n.cloud/webhook/e69696cc-171c-4f40-a81c-4f9865bcfeb1/chat">
-          <div class="chat-messages"><div class="msg system">Session started. Ask about a merchant.</div></div>
-          <div class="chat-input-row">
-            <textarea class="chat-input" rows="1" placeholder="Type a message…" onkeydown="handleKey(event, this)"></textarea>
-            <button class="chat-send" onclick="sendMessage(this)">Send</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Edit Merchant Info</div>
-          <span class="card-type type-chat">Chat</span>
-        </div>
-        <div class="card-meta">Output: <strong>Confirmation via Chat</strong></div>
-        <div class="last-run" id="status-pwA_Z_BMHOlsLLVgBpBll">
-          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
-          <div class="run-time">—</div>
-        </div>
-        <button class="chat-toggle" onclick="toggleChat('chat-pwA_Z_BMHOlsLLVgBpBll')">⌘ Open Chat</button>
-        <div class="chat-panel" id="chat-pwA_Z_BMHOlsLLVgBpBll" data-url="https://karenwidas.app.n8n.cloud/webhook/3b292f9b-6d8c-4f07-8e18-5f0e638c7e88/chat">
-          <div class="chat-messages"><div class="msg system">Session started. Describe the edits to make.</div></div>
-          <div class="chat-input-row">
-            <textarea class="chat-input" rows="1" placeholder="Type a message…" onkeydown="handleKey(event, this)"></textarea>
-            <button class="chat-send" onclick="sendMessage(this)">Send</button>
-          </div>
-        </div>
+        <button
+          id="merchant-open-btn"
+          class="btn-launch"
+          style="background:#e3f0f8;border-color:#a8cfe0;color:#1a5c8a;display:none;"
+          onclick="openMerchant()"
+        >↗ Open in Airtable</button>
+        <div id="merchant-feedback" style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px;"></div>
       </div>
 
     </div>
@@ -495,78 +539,31 @@
 
       <div class="card" style="--card-accent: #7a3e1a;">
         <div class="card-header">
-          <div class="card-title">Log a Ticket</div>
-          <span class="card-type type-ticket">Form</span>
+          <div class="card-title">Ticket Manager</div>
+          <span class="card-type type-ticket">App</span>
         </div>
-        <div class="card-meta">Output: <strong>Airtable</strong></div>
-        <button class="ticket-toggle" onclick="toggleTicket('ticket-panel')">✎ New Ticket</button>
-        <div class="ticket-panel" id="ticket-panel">
-          <div class="ticket-form-grid">
-            <div>
-              <label class="ticket-label">Company</label>
-              <div class="typeahead-wrap">
-                <input class="ticket-input" id="t-company" type="text" placeholder="Start typing merchant name…" autocomplete="off">
-                <div class="typeahead-dropdown" id="company-dropdown"></div>
-              </div>
-              <input type="hidden" id="t-company-id">
-            </div>
-            <div>
-              <label class="ticket-label">Contact</label>
-              <div class="typeahead-wrap">
-                <input class="ticket-input" id="t-contact" type="text" placeholder="Select company first…" autocomplete="off" disabled>
-                <div class="typeahead-dropdown" id="contact-dropdown"></div>
-              </div>
-              <input type="hidden" id="t-contact-id">
-            </div>
-            <div>
-              <label class="ticket-label">Type</label>
-              <select class="ticket-select" id="t-type">
-                <option value="Question">Question</option>
-                <option value="Problem">Problem</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label class="ticket-label">Priority</label>
-              <select class="ticket-select" id="t-priority">
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-            <div>
-              <label class="ticket-label">Channel</label>
-              <select class="ticket-select" id="t-channel">
-                <option value="Phone">Phone</option>
-                <option value="Email">Email</option>
-                <option value="Text">Text</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="full">
-              <label class="ticket-label">Subject</label>
-              <input class="ticket-input" id="t-subject" type="text" placeholder="Brief summary">
-            </div>
-            <div class="full">
-              <label class="ticket-label">Description</label>
-              <textarea class="ticket-textarea" id="t-description" placeholder="Details, context, background…"></textarea>
-            </div>
-            <div class="full">
-              <label class="ticket-label">Next Task</label>
-              <input class="ticket-input" id="t-next-task" type="text" placeholder="What needs to happen next?">
-            </div>
-          </div>
+        <!-- <div class="card-meta">Output: <strong>Airtable</strong></div> -->
+        <a class="ticket-toggle" href="file:///Users/karen/Dropbox/_DevPlus/_Clients/_Self/ticket-manager.html" target="_blank" style="display:block;text-align:center;text-decoration:none;">↗ Open Ticket Manager</a>
+      </div>
 
-          <div class="tasks-section">
-            <div class="tasks-label">
-              Tasks
-              <button class="add-task-btn" onclick="addTaskRow()">+ Add Task</button>
-            </div>
-            <div id="task-rows"></div>
-          </div>
+    </div>
+  </div>
+    </div>
+  </div>
 
-          <button class="ticket-submit" onclick="submitTicket()">Submit Ticket</button>
-          <div class="ticket-feedback" id="ticket-feedback"></div>
+  <div class="group">
+    <div class="group-label">n8n Automations</div>
+    <div class="cards">
+
+      <div class="card" style="--card-accent: var(--obsidian-accent);">
+        <div class="card-header">
+          <div class="card-title">CoWork → Obsidian</div>
+          <span class="card-type type-obsidian">Scheduled</span>
+        </div>
+        <div class="card-meta">Watches <strong>_CoCard/_inbox</strong> · runs 7pm daily</div>
+        <div class="last-run" id="status-xhDL4BWpNvFPXfUA">
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
+          <div class="run-time">—</div>
         </div>
       </div>
 
@@ -600,15 +597,77 @@
     </div>
   </div>
 
+
 </main>
 
 <script>
 const WORKFLOWS = [
   { id: 'LoDZG07dKmT63tfz',       statusEl: 'status-LoDZG07dKmT63tfz' },
-  { id: 'rr62qcLtgHBjEMaeZgk48',  statusEl: 'status-rr62qcLtgHBjEMaeZgk48' },
-  { id: 'pwA_Z_BMHOlsLLVgBpBll',  statusEl: 'status-pwA_Z_BMHOlsLLVgBpBll' },
   { id: '9GacF-ENq9gJros7yszgp',   statusEl: 'status-9GacF-ENq9gJros7yszgp' },
+  { id: 'xhDL4BWpNvFPXfUA',        statusEl: 'status-xhDL4BWpNvFPXfUA' },
 ];
+
+// ── Merchant Lookup ──────────────────────────────────────────
+const MERCHANT_SEARCH_URL = 'https://karenwidas.app.n8n.cloud/webhook/search-companies';
+const AIRTABLE_INTERFACE  = 'https://airtable.com/apppYzklXP1tsbWnF/pag83Qpg8L6MNygVQ';
+const AIRTABLE_PARAM_KEY  = 'y8G2k';
+
+let selectedMerchantId = null;
+let merchantDebounce;
+
+document.getElementById('merchant-search').addEventListener('input', function () {
+  clearTimeout(merchantDebounce);
+  selectedMerchantId = null;
+  document.getElementById('merchant-open-btn').style.display = 'none';
+  document.getElementById('merchant-feedback').textContent = '';
+  const q = this.value.trim();
+  if (q.length < 2) { closeMerchantDropdown(); return; }
+  merchantDebounce = setTimeout(() => fetchMerchants(q), 300);
+});
+
+document.getElementById('merchant-search').addEventListener('blur', function () {
+  setTimeout(closeMerchantDropdown, 150);
+});
+
+async function fetchMerchants(q) {
+  const dd = document.getElementById('merchant-dropdown');
+  dd.innerHTML = '<div class="typeahead-empty">Searching…</div>';
+  dd.classList.add('open');
+  try {
+    const res = await fetch(`${MERCHANT_SEARCH_URL}?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!data.length) {
+      dd.innerHTML = '<div class="typeahead-empty">No matches found</div>';
+      return;
+    }
+    dd.innerHTML = data.map(c =>
+      `<div class="typeahead-item" data-id="${c.id}" data-name="${c.name}">${c.name}</div>`
+    ).join('');
+    dd.querySelectorAll('.typeahead-item').forEach(item => {
+      item.addEventListener('mousedown', () => selectMerchant(item.dataset.id, item.dataset.name));
+    });
+  } catch (e) {
+    dd.innerHTML = '<div class="typeahead-empty">Error loading results</div>';
+  }
+}
+
+function selectMerchant(id, name) {
+  selectedMerchantId = id;
+  document.getElementById('merchant-search').value = name;
+  document.getElementById('merchant-open-btn').style.display = 'block';
+  document.getElementById('merchant-feedback').textContent = '';
+  closeMerchantDropdown();
+}
+
+function closeMerchantDropdown() {
+  document.getElementById('merchant-dropdown').classList.remove('open');
+}
+
+function openMerchant() {
+  if (!selectedMerchantId) return;
+  const url = `${AIRTABLE_INTERFACE}?${AIRTABLE_PARAM_KEY}=${selectedMerchantId}`;
+  window.open(url, 'merchant-view', 'width=1400,height=900,left=100,top=80');
+}
 
 async function fetchLastExecution(workflowId) {
   const res = await fetch(`https://karenwidas.app.n8n.cloud/webhook/n8n-status-proxy?workflowId=${workflowId}`);
