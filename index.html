@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workflow Command Center</title>
+<title>Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -470,7 +470,7 @@
 
 <header class="header">
   <div class="header-left">
-    <h1>Workflow Command Center</h1>
+    <h1>Dashboard</h1>
     <p>n8n · karenwidas</p>
   </div>
   <div class="status-bar">
@@ -481,24 +481,6 @@
 </header>
 
 <main class="main">
-
-  <div class="group">
-    <div class="group-label">Data Processing</div>
-    <div class="cards">
-      <div class="card" style="--card-accent: var(--form-accent);">
-        <div class="card-header">
-          <div class="card-title">TSYS Spreadsheet Comparison</div>
-          <span class="card-type type-form">Form</span>
-        </div>
-        <div class="card-meta">Output: <strong>Email</strong></div>
-        <div class="last-run" id="status-LoDZG07dKmT63tfz">
-          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
-          <div class="run-time">—</div>
-        </div>
-        <a class="btn-launch" href="https://karenwidas.app.n8n.cloud/form/39ce71f6-7b67-485c-9f25-fbeb8fd1558e" target="_blank">↗ Open Form</a>
-      </div>
-    </div>
-  </div>
 
   <div class="group">
     <div class="group-label">CRM</div>
@@ -545,9 +527,6 @@
         <!-- <div class="card-meta">Output: <strong>Airtable</strong></div> -->
         <a class="ticket-toggle" href="file:///Users/karen/Dropbox/_DevPlus/_Clients/_Self/ticket-manager.html" target="_blank" style="display:block;text-align:center;text-decoration:none;">↗ Open Ticket Manager</a>
       </div>
-
-    </div>
-  </div>
     </div>
   </div>
 
@@ -569,7 +548,39 @@
 
     </div>
   </div>
+  
+  <div class="group">
+    <div class="group-label">Data Processing</div>
+    <div class="cards">
+      <div class="card" style="--card-accent: var(--obsidian-accent);">
+        <div class="card-header">
+          <div class="card-title">CoWork → Obsidian</div>
+          <span class="card-type type-obsidian">Scheduled</span>
+        </div>
+        <div class="card-meta">Watches <strong>_CoCard/_inbox</strong> · runs 7pm daily</div>
+        <div class="last-run" id="status-xhDL4BWpNvFPXfUA">
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
+          <div class="run-time">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card" style="--card-accent: var(--form-accent);">
+        <div class="card-header">
+          <div class="card-title">TSYS Spreadsheet Comparison</div>
+          <span class="card-type type-form">Form</span>
+        </div>
+        <div class="card-meta">Output: <strong>Email</strong></div>
+        <div class="last-run" id="status-LoDZG07dKmT63tfz">
+          <div class="run-status status-loading"><div class="run-dot"></div><span>Loading…</span></div>
+          <div class="run-time">—</div>
+        </div>
+        <a class="btn-launch" href="https://karenwidas.app.n8n.cloud/form/39ce71f6-7b67-485c-9f25-fbeb8fd1558e" target="_blank">↗ Open Form</a>
+      </div>
+    </div>
+  </div>
 
+<!-->
   <div class="group">
     <div class="group-label">Knowledge Base</div>
     <div class="cards">
@@ -596,15 +607,16 @@
 
     </div>
   </div>
-
+<-->  
+  
 
 </main>
 
 <script>
 const WORKFLOWS = [
-  { id: 'LoDZG07dKmT63tfz',       statusEl: 'status-LoDZG07dKmT63tfz' },
-  { id: '9GacF-ENq9gJros7yszgp',   statusEl: 'status-9GacF-ENq9gJros7yszgp' },
-  { id: 'xhDL4BWpNvFPXfUA',        statusEl: 'status-xhDL4BWpNvFPXfUA' },
+  { id: 'LoDZG07dKmT63tfz',       statusEl: 'status-LoDZG07dKmT63tfz' }, // TSYS Spreadsheet Comparison
+  { id: '9GacF-ENq9gJros7yszgp',   statusEl: 'status-9GacF-ENq9gJros7yszgp' }, // KB Processor Info
+  { id: 'xhDL4BWpNvFPXfUA',        statusEl: 'status-xhDL4BWpNvFPXfUA' }, // CoWork -> Obsidian
 ];
 
 // ── Merchant Lookup ──────────────────────────────────────────
