@@ -602,11 +602,11 @@
     </a>
 
     <div class="nav-section-label" style="margin-top:16px;">Links</div>
-    <a class="nav-item" href="ticket-manager.html" target="_blank">
+    <a class="nav-item" href="../ticket-manager/ticket-manager.html" target="_blank">
       <span style="font-size:14px;">🎫</span>
       Ticket Manager
     </a>
-    <a class="nav-item" href="index.html" target="_blank">
+    <a class="nav-item" href="../index.html" target="_blank">
       <span style="font-size:14px;">🏠</span>
       Dashboard
     </a>
@@ -624,7 +624,7 @@
 // CONFIG — same constants as ticket-manager.html
 // ══════════════════════════════════════
 const AT   = 'https://api.airtable.com/v0';
-const BASE = 'appZNBaOkwT4zAjgH'; // same base
+const BASE = 'apppYzklXP1tsbWnF';
 
 const TF = {
   id:'fld0F5wRHSFO3HkMl', company:'fldnOGvAKjysqcvwt', contact:'fldlsMsvHy7Ox0Ok6',
@@ -642,8 +642,8 @@ const SF = {
   order:'fldLPrjNWGqkCp9dm', status:'fldfTkbMH4xh9AfEb', planned:'fldQatx2uh8rjXt14',
   due:'fld1mEb0v51FvnIzj', notes:'fldgvcTe3mHQUIDk2',
 };
-const T_TKT  = 'tblRpGe7PVLHMRj8X';
-const T_TASK = 'tblJJAQ3gXwPmrqhz';
+const T_TKT  = 'tblxZJUvRDKgLywUq';
+const T_TASK = 'tbl40uFmR8J8rM75z';
 const T_CO   = 'tblPEGS3d1QsE0KY1';
 const CF_NAME = 'fldgddNMEx5h9t38q';
 
@@ -1227,7 +1227,7 @@ async function closeTicket(ticketId) {
 // OPEN IN MANAGER
 // ══════════════════════════════════════
 function openInManager(ticketId) {
-  window.open(`ticket-manager.html#${ticketId}`, '_blank');
+  window.open(`../ticket-manager/ticket-manager.html#${ticketId}`, '_blank');
 }
 
 // ══════════════════════════════════════
