@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket Manager — CRM</title>
+<style>
+:root {
+  --cocard-blue: #00304F;
+  --cocard-green: #69932F;
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --surface2: #e8eef3;
+  --sidebar: #00304F;
+  --sidebar2: #001f33;
+  --sidebar-border: rgba(0,48,79,.2);
+  --sidebar-text: #9ab5c8;
+  --accent: #69932F;
+  --accent-hover: #527323;
+  --accent-light: rgba(105,147,47,.12);
+  --card: #ffffff;
+  --border: #c8d8e4;
+  --border-light: #dce8f0;
+  --text: #001f33;
+  --muted: #6a8fa8;
+  --success: #69932F;
+  --warning: #b86e00;
+  --danger: #c0392b;
+  --info: #0369a1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Tahoma,Helvetica,sans-serif;display:flex;height:100vh;overflow:hidden;background:var(--bg);color:var(--text)}
+
+/* ── Sidebar ── */
+#sidebar{width:380px;min-width:380px;background:#eef2f5;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #c8d8e4;box-shadow:2px 0 12px rgba(0,48,79,.1)}
+#sb-header{padding:18px 16px 14px;border-bottom:3px solid #69932F;display:flex;align-items:center;justify-content:space-between;background:#00304F}
+#sb-header h1{color:#fff;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+#sb-header .brand-dot{color:var(--accent);font-weight:900;font-size:18px;line-height:0;vertical-align:middle;margin-right:2px}
+#sb-header small{color:var(--sidebar-text);font-size:11px;letter-spacing:.5px;text-transform:uppercase;margin-top:3px;display:block}
+#btn-refresh{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--sidebar-text);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.2px;transition:all .2s}
+#btn-refresh:hover{color:#fff;border-color:var(--accent);background:rgba(105,147,47,.18)}
+
+#sb-filters{padding:10px 12px;border-bottom:1px solid #c8d8e4;display:flex;flex-direction:column;gap:8px;background:#eef2f5}
+#search-box{width:100%;padding:8px 11px;background:#fff;border:1px solid #c8d8e4;border-radius:6px;color:#001f33;font-size:13px;outline:none;transition:border .2s;font-family:inherit}
+#search-box::placeholder{color:#6a8fa8}
+#search-box:focus{border-color:#69932F;box-shadow:0 0 0 2px rgba(105,147,47,.15)}
+.status-chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{padding:3px 9px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.3px;cursor:pointer;border:1px solid #c8d8e4;color:#2a5070;background:#fff;transition:all .15s;white-space:nowrap;text-transform:uppercase}
+.chip:hover{color:#fff;border-color:#69932F;background:#69932F}
+.chip.active{color:#fff;background:#69932F;border-color:#69932F}
+.toggle-row{display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--sidebar-text);font-size:12px;user-select:none}
+.sw{width:34px;height:18px;background:rgba(255,255,255,.12);border-radius:9px;position:relative;transition:background .2s;flex-shrink:0}
+.sw.on{background:var(--accent)}
+.sw::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s}
+.sw.on::after{transform:translateX(16px)}
+
+#sb-count{padding:7px 14px;color:#6a8fa8;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid #c8d8e4;background:#e8eef3}
+#ticket-list{flex:1;overflow-y:auto;padding:10px 8px}
+#ticket-list::-webkit-scrollbar{width:3px}
+#ticket-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+
+.tcard{background:#ffffff;border:1px solid #c8d8e4;border-radius:12px;padding:13px 14px;margin-bottom:8px;cursor:pointer;transition:box-shadow .2s,transform .2s;box-shadow:0 2px 6px rgba(0,48,79,.1);position:relative;overflow:hidden}
+.tcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);border-radius:12px 12px 0 0}
+.tcard.active::before{background:var(--accent)}
+.tcard:hover{box-shadow:0 4px 14px rgba(0,48,79,.15);transform:translateY(-2px)}
+.tcard.active{background:#f0f8ea;border-color:#c0d48a;box-shadow:0 4px 14px rgba(0,48,79,.15)}
+.tcard.closed{background:#f5f8fa;border-color:#dce8f0}
+.tcard.closed::before{background:#9ab5c8}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px}
+.tc-id{font-size:10px;font-weight:600;color:#6a8fa8;letter-spacing:.3px}
+.tc-tasks{font-size:10px;color:#527323;font-weight:700;letter-spacing:.2px;background:#eef4e2;padding:1px 6px;border-radius:3px;border:1px solid #c0d48a}
+.tc-subject{font-size:12px;font-weight:400;color:#2a5070;line-height:1.4;margin-bottom:6px}
+.tc-company{font-size:13px;color:#001f33;margin-bottom:4px;font-weight:700;line-height:1.3}
+.tc-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:2px}
+.tc-season{font-size:11px;color:#527323;font-weight:600;margin-top:4px;letter-spacing:.1px}
+
+/* badges — sidebar (dark bg) */
+.badge{padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.bs-open{background:#eef4e2;color:#527323;font-weight:700}
+.bs-wc{background:#fef7e6;color:#7a4800}
+.bs-wo{background:#fef7e6;color:#7a4800}
+.bs-woff{background:#fef7e6;color:#7a4800}
+.bs-hold{background:#ede9f6;color:#4a2d8a}
+.bs-closed{background:#fdecea;color:#b33000;font-weight:700}
+.bp-low{background:#eef4e2;color:#527323}
+.bp-normal{background:#dce8f0;color:#00304F}
+.bp-medium{background:#fef7e6;color:#7a4800}
+.bp-high{background:#fdecea;color:#b33000}
+.btype{background:#dce8f0;color:#2a5070;border:1px solid #9ab5c8}
+.due-lbl{font-size:10px;color:#6a8fa8}
+.due-lbl.ov{color:#b33000}
+
+/* ── Main ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#eef2f5}
+#empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:10px}
+#empty-state .ei{font-size:56px;opacity:.15}
+#empty-state p{font-size:14px;font-weight:600;color:var(--muted)}
+
+/* ── Detail ── */
+#detail{flex:1;overflow-y:auto;display:none;flex-direction:column}
+#detail.show{display:flex}
+
+#dh{background:var(--card);border-bottom:3px solid var(--accent);padding:16px 22px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(0,30,50,.08)}
+#dh-left{flex:1;min-width:0}
+#dh-subject{font-size:19px;font-weight:700;color:var(--text);cursor:text;line-height:1.25;word-break:break-word;letter-spacing:-.2px}
+#dh-subject-input{font-size:19px;font-weight:700;border:2px solid var(--accent);border-radius:5px;padding:2px 8px;width:100%;outline:none;display:none;font-family:inherit}
+#dh-sub{font-size:11px;color:var(--muted);margin-top:5px;font-weight:600;letter-spacing:.2px;text-transform:uppercase}
+#dh-actions{display:flex;gap:7px;flex-shrink:0;align-items:flex-start}
+
+.btn{padding:7px 15px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.2px;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:inherit;text-transform:uppercase}
+.btn:disabled{opacity:.45;cursor:default}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#226640}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#a81818}
+.btn-warn{background:#e68a00;color:#fff}.btn-warn:hover{background:#c47400}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--muted);text-transform:uppercase}.btn-ghost:hover{background:var(--bg);color:var(--text);border-color:var(--text)}
+.btn-navy{background:var(--sidebar);color:#fff}.btn-navy:hover{background:#001e30}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+#db{padding:20px 22px;display:grid;grid-template-columns:1fr 290px;gap:18px;align-content:start;overflow-y:auto}
+@media(max-width:860px){#db{grid-template-columns:1fr}}
+
+.section{background:var(--card);border-radius:8px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,30,50,.05),0 4px 14px rgba(0,30,50,.04)}
+.sec-title{padding:10px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--sidebar);border-bottom:1px solid var(--border-light);background:#f0f5f8;display:flex;align-items:center;justify-content:space-between;border-left:3px solid var(--accent)}
+
+/* Fields */
+.fgrid{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.fw{grid-column:1/-1}
+.flabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--sidebar)}
+.fval{font-size:13px;color:var(--text)}
+.finput{padding:7px 10px;border:1.5px solid var(--border);border-radius:5px;font-size:13px;color:var(--text);outline:none;width:100%;background:#fff;font-family:inherit;transition:border .15s}
+.finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(105,147,47,.12)}
+select.finput{cursor:pointer}
+textarea.finput{resize:vertical;min-height:80px}
+/* Notes view/edit + drop target */
+.desc-view{min-height:70px;max-height:600px;overflow-y:auto;resize:vertical;padding:9px 11px;background:#fff;border:1.5px solid var(--border);border-radius:5px;font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;cursor:text;transition:border .15s}
+.desc-view:hover{border-color:var(--accent)}
+.desc-view.drag-over{border-color:var(--accent);background:rgba(105,147,47,.05);outline:2px dashed var(--accent)}
+.desc-view a{color:var(--accent);text-decoration:underline;word-break:break-all;font-weight:600}
+.desc-view a:hover{opacity:.75}
+
+#save-bar{padding:9px 16px;border-top:2px solid var(--accent);background:rgba(105,147,47,.07);display:none;align-items:center;gap:8px}
+#save-bar span{font-size:12px;color:var(--accent-hover);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+
+/* Tasks */
+#tasks-section{grid-column:1/-1}
+.task-row{padding:11px 14px;border-bottom:1px solid var(--border-light);display:flex;align-items:flex-start;gap:10px;transition:background .12s}
+.task-row:last-of-type{border-bottom:none}
+.task-row:hover{background:#f4f9f4}
+.task-cb{width:19px;height:19px;border:2px solid var(--border);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s;font-size:11px;font-weight:bold;color:#fff}
+.task-cb:hover{border-color:var(--accent);background:rgba(105,147,47,.1)}
+.task-cb.done{background:var(--accent);border-color:var(--accent)}
+.task-cb.done::after{content:'✓'}
+.task-body{flex:1;min-width:0}
+.task-name{font-size:13px;color:var(--text);line-height:1.4;font-weight:600}
+.task-name.done{text-decoration:line-through;color:var(--muted);font-weight:400}
+.task-info{display:flex;gap:7px;margin-top:4px;flex-wrap:wrap;align-items:center}
+.task-actions{display:flex;gap:5px;flex-shrink:0;align-items:center;opacity:0;transition:opacity .15s}
+.task-row:hover .task-actions{opacity:1}
+.ts-badge{padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.ts-todo{background:#e8f0f8;color:#00304F}
+.ts-inprog{background:#edf7ed;color:#1e6630}
+.ts-wc{background:#fef7e6;color:#7a4800}
+.ts-wo{background:#fef7e6;color:#7a4800}
+.ts-woff{background:#fef7e6;color:#7a4800}
+.ts-done{background:#e8f4eb;color:#1e6630}
+.ts-ns{background:#f4f6f8;color:#4b5563}
+
+#add-task-area{padding:12px 14px;border-top:1px solid var(--border-light);background:#f7faf7;display:none}
+#add-task-area.show{display:block}
+.atrow{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+.atrow .finput{flex:1;min-width:160px}
+
+/* ── Modals ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,20,35,.55);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-bg.show{display:flex}
+.modal-box{background:#fff;border-radius:10px;padding:26px;width:440px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.3);border-top:4px solid var(--accent)}
+.modal-box h2{font-size:17px;font-weight:700;margin-bottom:6px;color:var(--sidebar)}
+.modal-box p{color:var(--muted);font-size:13px;margin-bottom:16px}
+.modal-box .fg{margin-bottom:10px}
+.modal-footer{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+/* New ticket modal */
+#ntm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#ntm-grid .fg.fw{grid-column:1/-1}
+
+/* Toasts */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{padding:10px 16px;border-radius:6px;color:#fff;font-size:12px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:7px;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:tin .2s ease;text-transform:uppercase}
+.toast-ok{background:var(--accent)}
+.toast-err{background:var(--danger)}
+.toast-info{background:var(--sidebar)}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
+
+/* Sidebar footer */
+#sb-footer{padding:10px 8px;border-top:1px solid var(--sidebar-border);display:flex;flex-direction:column;gap:5px}
+
+/* Task inline editor */
+.task-edit-row{padding:12px 14px;border-bottom:1px solid var(--border-light);background:#f7faf7}
+.teg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.teg.fw{grid-template-columns:1fr}
+
+/* Spinner */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+#sb-footer-actions{display:flex;gap:5px}
+
+/* ── Drag to reorder ── */
+.drag-handle{width:16px;flex-shrink:0;cursor:grab;color:var(--border);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;margin-top:2px;user-select:none}
+.drag-handle:active{cursor:grabbing}
+.task-row.dragging{opacity:.35;background:#eef5ee}
+.task-row.drag-over{border-top:2px solid var(--accent);background:#f2f8f2}
+.task-row.drag-over-below{border-bottom:2px solid var(--accent)}
+
+/* ── Sequential locked tasks ── */
+.task-row.task-locked{opacity:.4;pointer-events:none;filter:grayscale(.4)}
+.task-row.task-locked .task-cb{cursor:not-allowed}
+.task-row.task-next{border-left:3px solid var(--accent);background:rgba(105,147,47,.06)}
+.task-next-indicator{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;background:rgba(105,147,47,.12);border-radius:3px;border:1px solid rgba(105,147,47,.25)}
+
+/* ── Mode toggle ── */
+.mode-btns{display:flex;gap:3px}
+.mode-btn{padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;font-family:inherit}
+.mode-btn.active-seq{background:var(--sidebar);color:#fff;border-color:var(--sidebar)}
+.mode-btn.active-par{background:rgba(105,147,47,.12);color:var(--accent-hover);border-color:var(--accent)}
+.mode-btn:hover:not(.active-seq):not(.active-par){background:var(--bg)}
+</style>
+</head>
+<body>
+
+<!-- ── API Config Modal ── -->
+<div class="modal-bg" id="cfg-modal">
+  <div class="modal-box">
+    <h2>🔑 Connect to Airtable</h2>
+    <p>Enter your Airtable personal access token. It's stored only in your browser's local storage.</p>
+    <div class="fg"><div class="flabel">Personal Access Token</div>
+      <input type="password" class="finput" id="cfg-key" placeholder="pat..." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveApiKey()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── New Ticket Modal ── -->
+<div class="modal-bg" id="nt-modal">
+  <div class="modal-box" style="width:540px">
+    <h2>New Ticket</h2>
+    <p>Fill in the details below. You can add tasks after creating the ticket.</p>
+    <div id="ntm-grid">
+      <div class="fg fw"><div class="flabel">Subject *</div><input type="text" class="finput" id="nt-subject" placeholder="Brief subject..." /></div>
+      <div class="fg">
+        <div class="flabel">Company</div>
+        <select class="finput" id="nt-company" onchange="onCompanyChange()">
+          <option value="">— Loading… —</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="flabel">Contact</div>
+        <select class="finput" id="nt-contact" disabled>
+          <option value="">— Select company first —</option>
+        </select>
+      </div>
+      <div class="fg"><div class="flabel">Type</div>
+        <select class="finput" id="nt-type">
+          <option value="">— None —</option>
+          <option>Question</option><option>Problem</option><option>Other</option><option>FM Season</option>
+        </select>
+      </div>
+      <div class="fg"><div class="flabel">Priority</div>
+        <select class="finput" id="nt-priority">
+          <option value="">— None —</option>
+          <option>Low</option><option>Normal</option><option>Medium</option><option>High</option>
+        </select>
+      </div>
+      <div class="fg"><div class="flabel">Channel</div>
+        <select class="finput" id="nt-channel">
+          <option value="">— None —</option>
+          <option>Email</option><option>Phone</option><option>Text</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><div class="flabel">Planned Date</div><input type="date" class="finput" id="nt-planned" /></div>
+      <div class="fg"><div class="flabel">Due Date</div><input type="date" class="finput" id="nt-due" /></div>
+      <div class="fg fw"><div class="flabel">Description</div><textarea class="finput" id="nt-desc" style="min-height:70px" placeholder="Optional description..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('nt-modal')">Cancel</button>
+      <button class="btn btn-primary" id="nt-save-btn" onclick="createTicket()">Create Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toasts ── -->
+<div id="toasts"></div>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<div id="sidebar">
+  <div id="sb-header">
+    <div>
+      <h1><span class="brand-dot">◆</span> Ticket Manager</h1>
+      <small>CoCard &nbsp;·&nbsp; Support &amp; Tasks</small>
+    </div>
+    <button id="btn-refresh" onclick="loadTickets()" title="Refresh">↻ Refresh</button>
+  </div>
+
+  <div id="sb-filters">
+    <input type="text" id="search-box" placeholder="🔍 Search subject or company…" oninput="renderList()" />
+    <div class="status-chips">
+      <div class="chip" data-sf="all" onclick="setFilter('all',this)">All</div>
+      <div class="chip active" data-sf="open" onclick="setFilter('open',this)">Open</div>
+      <div class="chip" data-sf="Waiting on Customer" onclick="setFilter('Waiting on Customer',this)">Waiting: Customer</div>
+      <div class="chip" data-sf="Waiting on Others" onclick="setFilter('Waiting on Others',this)">Waiting: Others</div>
+      <div class="chip" data-sf="Waiting on Office" onclick="setFilter('Waiting on Office',this)">Waiting: Office</div>
+      <div class="chip" data-sf="On Hold" onclick="setFilter('On Hold',this)">On Hold</div>
+      <div class="chip" data-sf="Closed" onclick="setFilter('Closed',this)">Closed</div>
+    </div>
+  </div>
+
+  <div id="sb-count"></div>
+  <div id="ticket-list"><div style="padding:20px;text-align:center;color:#4d5880;font-size:13px">Loading…</div></div>
+
+  <div id="sb-footer">
+    <div id="sb-footer-actions">
+      <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px 15px;letter-spacing:.5px" onclick="showModal('nt-modal')">＋ New Ticket</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--sidebar-text);font-size:14px;padding:8px 11px" onclick="showModal('cfg-modal')" title="API Settings">⚙</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN PANEL
+══════════════════════════════════════ -->
+<div id="main">
+  <div id="empty-state">
+    <div class="ei">🎫</div>
+    <div style="font-weight:600">Select a ticket</div>
+    <div style="font-size:13px">or create a new one</div>
+  </div>
+  <div id="detail"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const BASE   = 'apppYzklXP1tsbWnF';
+const T_TKT  = 'tblxZJUvRDKgLywUq';
+const T_TASK = 'tbl40uFmR8J8rM75z';
+const AT     = 'https://api.airtable.com/v0';
+
+const RECURRING_WEBHOOK = 'YOUR_RECURRING_WEBHOOK_URL';
+
+// Ticket field IDs
+const TF = {
+  id:'fld0F5wRHSFO3HkMl', company:'fldnOGvAKjysqcvwt', contact:'fldlsMsvHy7Ox0Ok6',
+  type:'fld5actTxHND0ETkD', status:'fld3djwQzzRgsO2bA', priority:'fldwm0abmxlanWuEY',
+  channel:'fldKquNzh3hQwQAps', subject:'fldIsJTQjAYN7ajXl', due:'fldyDnxmdJUwDEtr1',
+  planned:'fld76SUcpLTHEiu83', desc:'fldLSZwPikCVGMTGR', nextTask:'fldTxFgVq2DvZhH6A',
+  created:'fldn0NIHSga9I1dd6', updated:'fld0V8axhiLl1occX', closed:'fldqLPuic5m4RcanL',
+  tasks:'fldzfbSOdOxx6bMIk',
+  fmSeason:'fldMrv5gUTSEmWKYy',
+  recurring:'fldbKk0OyeF1fq3bv', recurringInterval:'flduhmYB4jF2CZI61',
+  recurringFrequency:'fldLHVs5Vo0PCPICK', recurringSchedule:'fldwjELZJfJst5mEJ',
+  recurringEnd:'fldFduNsWJtwwHwq7',
+};
+
+// Task field IDs
+const SF = {
+  id:'fldjlkXc7EWfZM9IV', task:'fldZKDhv2MogYM6xV', tickets:'fldS9lPWMkcf5Hr9r',
+  order:'fldLPrjNWGqkCp9dm', status:'fldfTkbMH4xh9AfEb', planned:'fldQatx2uh8rjXt14',
+  due:'fld1mEb0v51FvnIzj', notes:'fldgvcTe3mHQUIDk2',
+};
+
+// Related tables
+const T_CO     = 'tblPEGS3d1QsE0KY1'; // Companies
+const T_CON    = 'tblR80p5dAGRBx68K';  // Contacts
+const T_SEASON = 'tblbfy2peOy17gYvx';  // FM Seasons
+const SEASF_START = 'fldepLqOvu4IyT7UH'; // FM Seasons.Season Start
+const SEASF_END   = 'fldSqjWpIc6m4rogG'; // FM Seasons.Season End
+const CF_NAME  = 'fldgddNMEx5h9t38q'; // Companies.Company
+const COF_NAME = 'fldXW2KwH9nKHFf7E'; // Contacts.Full Name (formula)
+const COF_CO   = 'fldgHAbjybm0T8imT'; // Contacts.Company (link)
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let API_KEY = '';
+let allTickets    = [];
+let allCompanies  = [];
+let allContacts   = [];
+let allSeasons    = {}; // map: seasonRecordId → { start, end }
+let currentTicket = null;
+let currentTasks  = [];
+let activeFilter  = 'open';
+let changes       = {};
+let currentContactName = '';
+let taskModeFieldId = null; // set after ensureTaskModeField()
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+async function init() {
+  API_KEY = localStorage.getItem('at_tk') || '';
+  if (!API_KEY) { showModal('cfg-modal'); return; }
+  await ensureTaskModeField(); // get field ID before loading tickets
+  loadTickets();
+  loadCompanies();
+  loadContacts();
+  loadSeasons();
+}
+
+async function saveApiKey() {
+  const v = document.getElementById('cfg-key').value.trim();
+  if (!v) { toast('Token required','err'); return; }
+  API_KEY = v;
+  localStorage.setItem('at_tk', v);
+  closeModal('cfg-modal');
+  await ensureTaskModeField();
+  loadTickets();
+  loadCompanies();
+  loadContacts();
+  loadSeasons();
+}
+document.getElementById('cfg-key').addEventListener('keydown', e => { if(e.key==='Enter') saveApiKey(); });
+
+// ══════════════════════════════════════
+// API
+// ══════════════════════════════════════
+async function atFetch(path, opts={}) {
+  const r = await fetch(`${AT}/${BASE}/${path}`, {
+    ...opts,
+    headers:{ Authorization:`Bearer ${API_KEY}`, 'Content-Type':'application/json', ...(opts.headers||{}) },
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(()=>({}));
+    throw new Error(e.error?.message || `HTTP ${r.status}`);
+  }
+  return r.json();
+}
+
+async function atGet(table, params={}) {
+  const qs = new URLSearchParams();
+  qs.set('returnFieldsByFieldId', 'true');
+  if (params.formula) qs.set('filterByFormula', params.formula);
+  if (params.fields)  params.fields.forEach(f => qs.append('fields[]', f));
+  if (params.sort)    params.sort.forEach((s,i) => { qs.append(`sort[${i}][field]`,s.f); qs.append(`sort[${i}][direction]`,s.d||'asc'); });
+  qs.set('pageSize', params.pageSize || 100);
+  if (params.offset) qs.set('offset', params.offset);
+  return atFetch(`${table}?${qs}`);
+}
+
+async function atPatch(table, id, fields) {
+  return atFetch(`${table}/${id}?returnFieldsByFieldId=true`, { method:'PATCH', body:JSON.stringify({ fields }) });
+}
+
+async function atPost(table, fields) {
+  return atFetch(`${table}?returnFieldsByFieldId=true`, { method:'POST', body:JSON.stringify({ fields }) });
+}
+
+// Load ALL tickets with pagination
+async function loadAll(table, params) {
+  let records = [], offset;
+  do {
+    const d = await atGet(table, { ...params, offset });
+    records = records.concat(d.records);
+    offset = d.offset;
+  } while (offset);
+  return records;
+}
+
+// ══════════════════════════════════════
+// TASK MODE FIELD — auto-create in Airtable
+// ══════════════════════════════════════
+const META_API = 'https://api.airtable.com/v0/meta';
+const TASK_MODE_FIELD_NAME = 'Task Mode';
+
+async function ensureTaskModeField() {
+  // Use cached field ID from localStorage — schema:read only needed once
+  const cached = localStorage.getItem('at_tmf_' + BASE);
+  if (cached) { taskModeFieldId = cached; return; }
+
+  try {
+    // Read schema — correct endpoint is /tables (no table ID), returns all tables
+    const res = await fetch(`${META_API}/bases/${BASE}/tables`, {
+      headers: { Authorization: `Bearer ${API_KEY}` }
+    });
+    if (!res.ok) return; // no schema:read scope — skip silently
+    const schema = await res.json();
+    const tktTable = schema.tables?.find(t => t.id === T_TKT);
+    const existing = tktTable?.fields?.find(f => f.name === TASK_MODE_FIELD_NAME);
+    if (existing) {
+      taskModeFieldId = existing.id;
+      localStorage.setItem('at_tmf_' + BASE, taskModeFieldId);
+      return;
+    }
+
+    // Create the field
+    const create = await fetch(`${META_API}/bases/${BASE}/tables/${T_TKT}/fields`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: TASK_MODE_FIELD_NAME,
+        type: 'singleSelect',
+        options: { choices: [{ name: 'Parallel' }, { name: 'Sequential' }] }
+      })
+    });
+    if (!create.ok) return; // no schema:write scope — skip silently
+    const field = await create.json();
+    taskModeFieldId = field.id;
+    localStorage.setItem('at_tmf_' + BASE, taskModeFieldId);
+    toast('Task Mode field created in Airtable ✓', 'ok');
+  } catch(e) {
+    // Schema API unavailable — feature disabled silently
+  }
+}
+
+// ══════════════════════════════════════
+// LOAD COMPANIES & CONTACTS
+// ══════════════════════════════════════
+async function loadCompanies() {
+  try {
+    const data = await loadAll(T_CO, {
+      fields:[CF_NAME],
+      sort:[{f:CF_NAME, d:'asc'}],
+    });
+    allCompanies = data;
+    populateCompanyDropdown();
+    renderList(); // re-render now that company names are available
+  } catch(e) { /* non-critical, silently fail */ }
+}
+
+async function loadContacts() {
+  try {
+    allContacts = await loadAll(T_CON, {
+      fields: [COF_NAME, COF_CO],
+      sort: [{ f: COF_NAME, d: 'asc' }],
+    });
+  } catch(e) { /* non-critical, silently fail */ }
+}
+
+async function loadSeasons() {
+  try {
+    const data = await loadAll(T_SEASON, { fields: [SEASF_START, SEASF_END] });
+    allSeasons = {};
+    data.forEach(r => {
+      allSeasons[r.id] = { start: r.fields[SEASF_START] || null, end: r.fields[SEASF_END] || null };
+    });
+    renderList(); // re-render cards with season dates once loaded
+  } catch(e) { /* non-critical */ }
+}
+
+function resolveSeasonDates(ticket) {
+  const seasonIds = ticket?.fields[TF.fmSeason] || [];
+  if (!seasonIds.length) return null;
+  const id = linkId(seasonIds[0]);
+  return id ? (allSeasons[id] || null) : null;
+}
+
+// Filter allContacts by company record ID (client-side — no API call needed)
+function contactsForCompany(companyId) {
+  if (!companyId || !allContacts.length) return [];
+  return allContacts.filter(c => {
+    const links = c.fields[COF_CO] || [];
+    return links.some(l => linkId(l) === companyId);
+  });
+}
+
+function populateCompanyDropdown() {
+  const sel = document.getElementById('nt-company');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— None —</option>' +
+    allCompanies.map(c => `<option value="${c.id}">${esc(c.fields[CF_NAME] || c.id)}</option>`).join('');
+}
+
+function onCompanyChange() {
+  const companyId = document.getElementById('nt-company').value;
+  const contactSel = document.getElementById('nt-contact');
+  contactSel.disabled = true;
+
+  if (!companyId) {
+    contactSel.innerHTML = '<option value="">— Select company first —</option>';
+    return;
+  }
+
+  const contacts = contactsForCompany(companyId);
+  if (!contacts.length) {
+    contactSel.innerHTML = '<option value="">— No contacts found —</option>';
+    return;
+  }
+  contactSel.innerHTML = '<option value="">— None —</option>' +
+    contacts.map(c => `<option value="${c.id}">${esc(c.fields[COF_NAME] || c.id)}</option>`).join('');
+  contactSel.disabled = false;
+}
+
+// ══════════════════════════════════════
+// LOAD TICKETS
+// ══════════════════════════════════════
+async function loadTickets() {
+  document.getElementById('ticket-list').innerHTML = '<div style="padding:20px;text-align:center;color:#4d5880;font-size:13px">Loading…</div>';
+  try {
+    const tktFields = [TF.id,TF.subject,TF.company,TF.status,TF.priority,TF.type,TF.due,TF.tasks,TF.closed,TF.contact,TF.created,TF.updated,TF.desc,TF.nextTask,TF.planned,TF.channel,TF.recurring,TF.recurringInterval,TF.recurringFrequency,TF.recurringSchedule,TF.recurringEnd,TF.fmSeason];
+    if (taskModeFieldId) tktFields.push(taskModeFieldId);
+    allTickets = await loadAll(T_TKT, {
+      fields: tktFields,
+      sort:[{f:TF.id,d:'desc'}],
+    });
+    renderList();
+  } catch(e) {
+    document.getElementById('ticket-list').innerHTML = `<div style="padding:16px;color:#f87171;font-size:12px">Error: ${e.message}</div>`;
+    toast(e.message,'err');
+  }
+}
+
+// ══════════════════════════════════════
+// RENDER LIST
+// ══════════════════════════════════════
+function renderList() {
+  const q = document.getElementById('search-box').value.toLowerCase();
+  const filtered = allTickets.filter(t => {
+    const f = t.fields;
+    const s = sv(f[TF.status]);
+    if (activeFilter === 'Closed') {
+      if (s !== 'Closed') return false;
+    } else if (activeFilter !== 'all') {
+      if (s === 'Closed') return false;
+      if (activeFilter !== 'open' && s !== activeFilter) return false;
+    }
+    if (q) {
+      const sub = (f[TF.subject]||'').toLowerCase();
+      const co  = resolveCompanyName(linkId(f[TF.company]?.[0])).toLowerCase();
+      if (!sub.includes(q) && !co.includes(q)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('sb-count').textContent = `${filtered.length} ticket${filtered.length!==1?'s':''}`;
+
+  if (!filtered.length) {
+    document.getElementById('ticket-list').innerHTML = '<div style="padding:20px;text-align:center;color:#4d5880;font-size:13px">No tickets found</div>';
+    return;
+  }
+
+  document.getElementById('ticket-list').innerHTML = filtered.map(t => {
+    const f  = t.fields;
+    const st = sv(f[TF.status]);
+    const pr = sv(f[TF.priority]);
+    const tp = sv(f[TF.type]);
+    const co = resolveCompanyName(linkId(f[TF.company]?.[0]));
+    const tc = f[TF.tasks]?.length || 0;
+    const du = f[TF.due] || '';
+    return `<div class="tcard ${st==='Closed'?'closed':''} ${currentTicket?.id===t.id?'active':''}" onclick="selectTicket('${t.id}')">
+      <div class="tc-top">
+        <span class="tc-company">${co?esc(co):'(No company)'}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px">
+        <div class="tc-subject" style="margin-bottom:0;flex:1;min-width:0">${esc(f[TF.subject]||'(No subject)')}</div>
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+          <span class="tc-id">#${f[TF.id]}</span>
+          ${tc?`<span class="tc-tasks">📋 ${tc}</span>`:''}
+        </div>
+      </div>
+      <div class="tc-meta">
+        <span class="badge ${sbc(st)}">${st||'—'}</span>
+        ${pr?`<span class="badge ${pbc(pr)}">${pr}</span>`:''}
+        ${tp?`<span class="badge btype">${tp}</span>`:''}
+        ${du?`<span class="due-lbl ${ov(du)&&st!=='Closed'?'ov':''}">📅 ${fd(du)}${f[TF.recurring]?' 🔁':''}</span>`:f[TF.recurring]?`<span class="due-lbl">🔁</span>`:''}
+      </div>
+      ${(()=>{const s=resolveSeasonDates(t);return(s?.start||s?.end)?`<div class="tc-season">📅 ${s.start?fd(s.start):'?'} – ${s.end?fd(s.end):'?'}</div>`:''})()}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// SELECT TICKET
+// ══════════════════════════════════════
+async function selectTicket(id) {
+  if (currentTicket?.id === id) return;
+  changes = {};
+  currentTicket = allTickets.find(t => t.id === id) || null;
+  renderList();
+  const det = document.getElementById('detail');
+  const emp = document.getElementById('empty-state');
+  if (!currentTicket) { det.classList.remove('show'); emp.style.display=''; return; }
+  emp.style.display = 'none';
+  det.classList.add('show');
+  det.innerHTML = '<div style="padding:60px;text-align:center;color:var(--muted)">Loading tasks…</div>';
+  try {
+    // Re-fetch ticket to ensure all fields (including recurring) are current
+    const fresh = await atFetch(`${T_TKT}/${id}?returnFieldsByFieldId=true`);
+    patchTicketLocal(fresh);
+    currentTicket = allTickets.find(t => t.id === id) || null;
+    currentTasks = await loadTasks(currentTicket);
+  } catch(e) { currentTasks = []; }
+  currentContactName = '';
+  renderDetail();
+  initDetailContacts(); // async: populates contact dropdown + updates dh-sub
+}
+
+// ══════════════════════════════════════
+// LOAD TASKS
+// ══════════════════════════════════════
+// Linked record fields return as plain string IDs when returnFieldsByFieldId=true
+// Handle both string ("recXXX") and legacy object ({id:"recXXX"}) formats
+function linkId(l) { return (l && typeof l === 'object') ? l.id : l; }
+function linkName(l) { return (l && typeof l === 'object') ? (l.name || l.id || '') : (l || ''); }
+// Airtable v0 REST API returns singleSelect as a plain string; newer APIs return {name,id,color}. Handle both.
+function sv(v) { return v ? (typeof v === 'object' ? (v.name || '') : String(v)) : ''; }
+
+function resolveCompanyName(recId) {
+  if (!recId) return '';
+  const id = typeof recId === 'object' ? recId.id : recId;
+  const rec = allCompanies.find(c => c.id === id);
+  return rec ? (rec.fields[CF_NAME] || '') : '';
+}
+
+async function loadTasks(ticket) {
+  const links = ticket.fields[TF.tasks] || [];
+  if (!links.length) return [];
+  const ids = links.map(linkId).filter(Boolean);
+  if (!ids.length) return [];
+  const formula = `OR(${ids.map(i=>`RECORD_ID()="${i}"`).join(',')})`;
+  // No fields[] restriction — let Airtable return all task fields to avoid
+  // silent field-ID mismatches that cause dates/status to not appear on load.
+  const data = await atGet(T_TASK, { formula });
+  return data.records.sort((a,b) => {
+    const oa = a.fields[SF.order] ?? 9999;
+    const ob = b.fields[SF.order] ?? 9999;
+    return oa - ob;
+  });
+}
+
+// ══════════════════════════════════════
+// RENDER DETAIL
+// ══════════════════════════════════════
+function renderDetail() {
+  const t  = currentTicket;
+  const f  = t.fields;
+  const st = sv(f[TF.status]);
+  const pr = sv(f[TF.priority]);
+  const tp = sv(f[TF.type]);
+  const ch = sv(f[TF.channel]);
+  const coId = linkId(f[TF.company]?.[0]);
+  const co   = resolveCompanyName(coId);
+  const cn   = currentContactName;
+  const closed   = st === 'Closed';
+  const taskMode = taskModeFieldId ? sv(f[taskModeFieldId]) : '';
+  const done  = currentTasks.filter(tt => sv(tt.fields[SF.status])==='Completed').length;
+  const total = currentTasks.length;
+
+  document.getElementById('detail').innerHTML = `
+  <div id="dh">
+    <div id="dh-left">
+      <div id="dh-subject" title="Double-click to edit subject" ondblclick="editSubject()">${co?`<span style="color:var(--muted);font-weight:500">${esc(co)}</span> <span style="color:var(--border);font-weight:300">|</span> `:''}${esc(f[TF.subject]||'(No subject)')}</div>
+      <input id="dh-subject-input" class="finput" value="${ea(f[TF.subject]||'')}"
+        onblur="saveSubject()" onkeydown="if(event.key==='Enter')saveSubject();if(event.key==='Escape')cancelSubject();" />
+      <div id="dh-sub"></div>
+    </div>
+    <div id="dh-actions">
+      ${closed
+        ? `<button class="btn btn-warn" onclick="reopenTicket()">↩ Reopen</button>`
+        : `<button class="btn btn-danger" onclick="closeTicket()">✕ Close</button>`
+      }
+      <button class="btn btn-ghost btn-sm" onclick="refreshDetail()" title="Refresh">↻</button>
+    </div>
+  </div>
+
+  <div id="db">
+    <!-- LEFT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Core fields -->
+      <div class="section">
+        <div class="sec-title">Ticket Info</div>
+        <div class="fgrid">
+          <div class="fg">
+            <div class="flabel">Status</div>
+            <select class="finput" onchange="qc('${TF.status}',this.value,'sel')">
+              <option value="Open"                ${st==='Open'?'selected':''}>Open</option>
+              <option value="Waiting on Customer" ${st==='Waiting on Customer'?'selected':''}>Waiting on Customer</option>
+              <option value="Waiting on Others"   ${st==='Waiting on Others'?'selected':''}>Waiting on Others</option>
+              <option value="Waiting on Office"   ${st==='Waiting on Office'?'selected':''}>Waiting on Office</option>
+              <option value="On Hold"             ${st==='On Hold'?'selected':''}>On Hold</option>
+              <option value="Closed"              ${st==='Closed'?'selected':''}>Closed</option>
+            </select>
+          </div>
+          <div class="fg">
+            <div class="flabel">Priority</div>
+            <select class="finput" onchange="qc('${TF.priority}',this.value,'sel')">
+              <option value="">— None —</option>
+              <option value="Low"    ${pr==='Low'?'selected':''}>Low</option>
+              <option value="Normal" ${pr==='Normal'?'selected':''}>Normal</option>
+              <option value="Medium" ${pr==='Medium'?'selected':''}>Medium</option>
+              <option value="High"   ${pr==='High'?'selected':''}>High</option>
+            </select>
+          </div>
+          <div class="fg">
+            <div class="flabel">Type</div>
+            <select class="finput" onchange="qc('${TF.type}',this.value,'sel')">
+              <option value="">— None —</option>
+              <option value="Question" ${tp==='Question'?'selected':''}>Question</option>
+              <option value="Problem"  ${tp==='Problem'?'selected':''}>Problem</option>
+              <option value="Other"    ${tp==='Other'?'selected':''}>Other</option>
+              <option value="FM Season"${tp==='FM Season'?'selected':''}>FM Season</option>
+            </select>
+          </div>
+          <div class="fg">
+            <div class="flabel">Channel</div>
+            <select class="finput" onchange="qc('${TF.channel}',this.value,'sel')">
+              <option value="">— None —</option>
+              <option value="Email" ${ch==='Email'?'selected':''}>Email</option>
+              <option value="Phone" ${ch==='Phone'?'selected':''}>Phone</option>
+              <option value="Text"  ${ch==='Text'?'selected':''}>Text</option>
+              <option value="Other" ${ch==='Other'?'selected':''}>Other</option>
+            </select>
+          </div>
+          <div class="fg">
+            <div class="flabel">Planned Date</div>
+            <input type="date" class="finput" value="${f[TF.planned]||''}" onchange="qc('${TF.planned}',this.value,'date')" />
+          </div>
+          <div class="fg">
+            <div class="flabel">Due Date</div>
+            <input type="date" class="finput" value="${f[TF.due]||''}" onchange="qc('${TF.due}',this.value,'date')" />
+          </div>
+          <div class="fg" style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--border-light);margin-top:2px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sidebar)">
+              <input type="checkbox" id="rec-check" ${f[TF.recurring]?'checked':''} onchange="qc('${TF.recurring}',this.checked,'bool');toggleRecurringFields(this.checked)" style="width:15px;height:15px;accent-color:var(--accent)">
+              🔁 Recurring
+            </label>
+          </div>
+          <div id="recurring-fields" style="grid-column:1/-1;display:${f[TF.recurring]?'grid':'none'};grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+            <div class="fg">
+              <div class="flabel">Interval</div>
+              <input type="number" class="finput" min="1" value="${f[TF.recurringInterval]||1}" onchange="qc('${TF.recurringInterval}',parseInt(this.value),'num')" />
+            </div>
+            <div class="fg">
+              <div class="flabel">Frequency</div>
+              <select class="finput" onchange="qc('${TF.recurringFrequency}',this.value,'sel')">
+                <option value="">— None —</option>
+                ${recurringFreqOptions(sv(f[TF.recurringFrequency]))}
+              </select>
+            </div>
+            <div class="fg">
+              <div class="flabel">Schedule</div>
+              <select class="finput" onchange="qc('${TF.recurringSchedule}',this.value,'sel')">
+                <option value="">— None —</option>
+                ${recurringSchedOptions(sv(f[TF.recurringSchedule]))}
+              </select>
+            </div>
+            <div class="fg">
+              <div class="flabel">End Date</div>
+              <input type="date" class="finput" value="${f[TF.recurringEnd]||''}" onchange="qc('${TF.recurringEnd}',this.value,'date')" />
+            </div>
+          </div>
+          <div class="fg fw">
+            <div class="flabel" style="display:flex;align-items:center;justify-content:space-between">
+              <span>Notes</span>
+              <button onclick="toggleRefForm()" id="btn-add-ref" title="Add a dated reference note" style="font-size:10px;padding:3px 9px;background:#fff;border:1.5px solid var(--border);border-radius:4px;color:var(--sidebar);cursor:pointer;font-weight:700;letter-spacing:.3px;text-transform:uppercase;transition:all .15s;font-family:inherit" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--sidebar)'">+ Ref</button>
+            </div>
+            <div id="ref-form" style="display:none;background:#f8f9ff;border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:6px;display:none;flex-direction:column;gap:6px">
+              <input id="ref-label" type="text" placeholder="Label  (e.g. Re: Quote follow-up)" class="finput" style="font-size:12px;padding:5px 8px" />
+              <input id="ref-url" type="text" placeholder="URL  (optional — paste airmail://, https://, etc.)" class="finput" style="font-size:12px;padding:5px 8px" />
+              <div style="display:flex;gap:6px">
+                <button onclick="submitRefForm()" class="btn btn-primary btn-sm" style="font-size:12px">Add</button>
+                <button onclick="toggleRefForm()" class="btn btn-ghost btn-sm" style="font-size:12px">Cancel</button>
+              </div>
+            </div>
+            <div id="desc-view" class="desc-view"
+              title="Double-click to edit"
+              ondblclick="startDescEdit()"
+              ondragenter="this.classList.add('drag-over');event.preventDefault()"
+              ondragover="event.preventDefault()"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="descDrop(event)">${renderDescHtml(f[TF.desc]||'')}</div>
+            <textarea id="desc-edit" class="finput" style="display:none;min-height:90px;resize:vertical"
+              onblur="saveDescEdit()"
+              onkeydown="if(event.key==='Escape'){event.preventDefault();cancelDescEdit()}">${esc(f[TF.desc]||'')}</textarea>
+          </div>
+        </div>
+        <div id="save-bar">
+          <span>● Unsaved changes</span>
+          <button class="btn btn-primary btn-sm" onclick="saveChanges()">Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+        </div>
+      </div>
+
+      <!-- Tasks -->
+      <div class="section" id="tasks-section">
+        <div class="sec-title">
+          <span id="tasks-header-label">Tasks${total?` (${done}/${total} done)`:''}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div class="mode-btns">
+              <button class="mode-btn ${taskMode==='Sequential'?'active-seq':''}" onclick="setTaskMode('Sequential')" title="Tasks must be completed in order">Sequential</button>
+              <button class="mode-btn ${!taskMode||taskMode==='Parallel'?'active-par':''}" onclick="setTaskMode('Parallel')" title="Tasks can be done in any order">Parallel</button>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="toggleAddTask()">+ Add Task</button>
+          </div>
+        </div>
+        <div id="tasks-list">
+          ${currentTasks.length
+            ? renderTaskList()
+            : '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No tasks yet</div>'
+          }
+        </div>
+        <div id="add-task-area">
+          <div class="atrow">
+            <input type="text" class="finput" id="nt-task" placeholder="Task description…" style="flex:2" />
+            <select class="finput" id="nt-tstatus" style="width:150px">
+              <option>To Do</option><option>In Progress</option>
+              <option>Waiting on Customer</option><option>Waiting on Others</option>
+              <option>Waiting on Office</option><option>Not Started</option>
+            </select>
+            <input type="date" class="finput" id="nt-tplan" placeholder="Plan" style="width:130px" title="Planned date" />
+            <input type="date" class="finput" id="nt-tdue" placeholder="Due" style="width:130px" title="Due date" />
+          </div>
+          <div class="atrow">
+            <input type="text" class="finput" id="nt-tnotes" placeholder="Notes (optional)…" style="flex:1" />
+            <button class="btn btn-primary btn-sm" onclick="addTask()">Add</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleAddTask()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: metadata -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="section">
+        <div class="sec-title">Details</div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+          <div class="fg"><div class="flabel">Ticket ID</div><div class="fval">#${f[TF.id]}</div></div>
+          <div class="fg"><div class="flabel">Company</div><div class="fval">${co||'—'}</div></div>
+          <div class="fg">
+            <div class="flabel">Contact</div>
+            <select class="finput" id="dt-contact" onchange="onDetailContactChange()" ${!coId?'disabled':''}>
+              <option value="">— Loading… —</option>
+            </select>
+          </div>
+          <div class="fg"><div class="flabel">Created</div><div class="fval">${fdt(f[TF.created])}</div></div>
+          <div class="fg"><div class="flabel">Updated</div><div class="fval">${fdt(f[TF.updated])}</div></div>
+          ${f[TF.closed]?`<div class="fg"><div class="flabel">Closed</div><div class="fval">${fdt(f[TF.closed])}</div></div>`:''}
+          ${(()=>{const s=resolveSeasonDates(t);if(!s?.start&&!s?.end)return '';return `<div style="border-top:1px solid var(--border-light);padding-top:10px;margin-top:2px;display:flex;flex-direction:column;gap:10px"><div class="fg"><div class="flabel">Season Start</div><div class="fval" style="font-weight:600;color:var(--accent)">${s.start?fd(s.start):'—'}</div></div><div class="fg"><div class="flabel">Season End</div><div class="fval" style="font-weight:600;color:var(--accent)">${s.end?fd(s.end):'—'}</div></div></div>`;})()}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+// RENDER TASK ROW
+// ══════════════════════════════════════
+function getLockedSet() {
+  if (!taskModeFieldId || !currentTicket) return new Set();
+  const mode = sv(currentTicket.fields[taskModeFieldId]);
+  if (mode !== 'Sequential') return new Set();
+  const locked = new Set();
+  let foundIncomplete = false;
+  for (const t of currentTasks) {
+    const done = sv(t.fields[SF.status]) === 'Completed';
+    if (foundIncomplete) locked.add(t.id);
+    else if (!done) foundIncomplete = true;
+  }
+  return locked;
+}
+
+function renderTaskList() {
+  const locked = getLockedSet();
+  const isSeq = taskModeFieldId && sv(currentTicket?.fields[taskModeFieldId]) === 'Sequential';
+  // In sequential mode the "active" task is always the first incomplete one
+  const nextId = isSeq
+    ? currentTasks.find(t => sv(t.fields[SF.status]) !== 'Completed')?.id
+    : null;
+  return currentTasks.map(t => renderTask(t, locked.has(t.id), t.id === nextId)).join('');
+}
+
+function renderTask(task, isLocked=false, isNext=false) {
+  const f  = task.fields;
+  const sn = sv(f[SF.status]) || 'To Do';
+  const dn = sn === 'Completed';
+  const nm = f[SF.task] || '(Unnamed)';
+  const pl = f[SF.planned] || '';
+  const du = f[SF.due] || '';
+  const nt = f[SF.notes] || '';
+  return `<div class="task-row ${isLocked?'task-locked':''} ${isNext?'task-next':''}"
+    id="tr-${task.id}"
+    draggable="true"
+    ondragstart="dragStart(event,'${task.id}')"
+    ondragover="dragOver(event)"
+    ondrop="dropTask(event,'${task.id}')"
+    ondragend="dragEnd()">
+    <div class="drag-handle" title="Drag to reorder">⠿</div>
+    <div class="task-cb ${dn?'done':''}" onclick="toggleTask('${task.id}',${dn})" title="${dn?'Mark incomplete':'Mark complete'}"></div>
+    <div class="task-body">
+      <div class="task-name ${dn?'done':''}">${esc(nm)}${isNext?` <span class="task-next-indicator">▶ Active</span>`:''}${isLocked?' <span style="font-size:11px;opacity:.6">🔒</span>':''}</div>
+      <div class="task-info">
+        <span class="ts-badge ${tsc(sn)}">${sn}</span>
+        ${(pl||du)?`<span style="display:inline-flex;gap:8px;align-items:center;white-space:nowrap">
+          ${pl?`<span class="due-lbl" style="color:var(--muted)"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Plan</span> ${fd(pl)}</span>`:''}
+          ${du?`<span class="due-lbl ${ov(du)&&!dn?'ov':''}" style="${ov(du)&&!dn?'color:#fca5a5':'color:var(--muted)'}"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px">Due</span> ${fd(du)}</span>`:''}
+        </span>`:''}
+        ${nt?`<span title="${ea(nt)}" style="font-size:11px;color:var(--muted)">📝</span>`:''}
+      </div>
+    </div>
+    <div class="task-actions">
+      <select class="finput" style="width:135px;font-size:11px;padding:3px 6px" onchange="setTaskStatus('${task.id}',this.value)" title="Change status">
+        ${['To Do','In Progress','Waiting on Customer','Waiting on Others','Waiting on Office','Completed','Not Started']
+          .map(s=>`<option value="${s}" ${sn===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="editTask('${task.id}')" title="Edit">✏</button>
+	  <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteTask('${task.id}')" title="Delete">✕</button>
+    </div>
+  </div>`;
+}
+
+function updateTaskList() {
+  document.getElementById('tasks-list').innerHTML = currentTasks.length
+    ? renderTaskList()
+    : '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No tasks yet</div>';
+  updateTaskHeader();
+}
+
+function updateTaskHeader() {
+  const done  = currentTasks.filter(t => sv(t.fields[SF.status])==='Completed').length;
+  const total = currentTasks.length;
+  const sp = document.getElementById('tasks-header-label');
+  if (sp) sp.textContent = `Tasks${total?` (${done}/${total} done)`:'' }`;
+}
+
+// ══════════════════════════════════════
+// TASK ACTIONS
+// ══════════════════════════════════════
+async function toggleTask(id, isDone) {
+  const ns = isDone ? 'To Do' : 'Completed';
+  const i = currentTasks.findIndex(t => t.id === id);
+  if (i >= 0) currentTasks[i] = { ...currentTasks[i], fields: { ...currentTasks[i].fields, [SF.status]: ns } };
+  updateTaskList();
+  try {
+    const updated = await atPatch(T_TASK, id, { [SF.status]: ns });
+    patchTaskLocal(id, updated);
+    updateTaskList();
+    toast(isDone ? 'Task reopened' : 'Task completed ✓', 'ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function setTaskStatus(id, status) {
+  const i = currentTasks.findIndex(t => t.id === id);
+  if (i >= 0) currentTasks[i] = { ...currentTasks[i], fields: { ...currentTasks[i].fields, [SF.status]: status } };
+  updateTaskList();
+  try {
+    const updated = await atPatch(T_TASK, id, { [SF.status]: status });
+    patchTaskLocal(id, updated);
+    updateTaskList();
+    toast('Status updated','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function patchTaskLocal(id, updated) {
+  const i = currentTasks.findIndex(t => t.id === id);
+  if (i >= 0) currentTasks[i] = { ...currentTasks[i], fields: { ...currentTasks[i].fields, ...updated.fields } };
+}
+
+async function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  try {
+    await atFetch(`${T_TASK}/${id}`, { method: 'DELETE' });
+    currentTasks = currentTasks.filter(t => t.id !== id);
+    // Update task count on ticket in local state
+    const ti = allTickets.findIndex(t => t.id === currentTicket.id);
+    if (ti >= 0) {
+      allTickets[ti].fields[TF.tasks] = (allTickets[ti].fields[TF.tasks] || []).filter(l => linkId(l) !== id);
+    }
+    updateTaskList();
+    renderList();
+    toast('Task deleted', 'ok');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ══════════════════════════════════════
+// DRAG TO REORDER
+// ══════════════════════════════════════
+let dragSrcId = null;
+
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+  // slight delay so the ghost image renders before adding class
+  setTimeout(() => document.getElementById(`tr-${id}`)?.classList.add('dragging'), 0);
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  // Clear all drag-over indicators first
+  document.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over'));
+  if (row.id !== `tr-${dragSrcId}`) row.classList.add('drag-over');
+}
+
+function dropTask(e, targetId) {
+  e.preventDefault();
+  const srcId = dragSrcId; // capture before dragEnd() nulls it
+  dragEnd();
+  if (!srcId || srcId === targetId) return;
+  const srcIdx = currentTasks.findIndex(t => t.id === srcId);
+  const tgtIdx = currentTasks.findIndex(t => t.id === targetId);
+  if (srcIdx < 0 || tgtIdx < 0) return;
+  // Reorder array
+  const [moved] = currentTasks.splice(srcIdx, 1);
+  currentTasks.splice(tgtIdx, 0, moved);
+  // Assign new order values immediately in local state
+  currentTasks.forEach((t, i) => { t.fields[SF.order] = i + 1; });
+  updateTaskList();
+  saveTaskOrder(); // persist async, no await
+}
+
+function dragEnd() {
+  document.querySelectorAll('.task-row').forEach(r => r.classList.remove('dragging','drag-over'));
+  dragSrcId = null;
+}
+
+async function saveTaskOrder() {
+  // Airtable batch PATCH supports up to 10 records at once
+  const patches = currentTasks.map((t, i) => ({ id: t.id, fields: { [SF.order]: i + 1 } }));
+  try {
+    for (let i = 0; i < patches.length; i += 10) {
+      await atFetch(`${T_TASK}?returnFieldsByFieldId=true`, {
+        method: 'PATCH',
+        body: JSON.stringify({ records: patches.slice(i, i + 10) }),
+      });
+    }
+  } catch(e) { toast('Order save failed: ' + e.message, 'err'); }
+}
+
+// ══════════════════════════════════════
+// TASK MODE (Sequential / Parallel)
+// ══════════════════════════════════════
+async function setTaskMode(mode) {
+  if (!taskModeFieldId) {
+    // PAT may not have had schema:read/write on first load — retry once
+    await ensureTaskModeField();
+    if (!taskModeFieldId) {
+      toast('Task Mode field unavailable. Add schema:read + schema:write to your PAT.', 'err');
+      return;
+    }
+  }
+  // Optimistic update so getLockedSet() sees the new mode immediately
+  if (currentTicket) currentTicket.fields[taskModeFieldId] = mode;
+  updateTaskList();
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.className = 'mode-btn';
+    if (btn.textContent === mode) btn.classList.add(mode==='Sequential'?'active-seq':'active-par');
+  });
+  try {
+    const updated = await atPatch(T_TKT, currentTicket.id, { [taskModeFieldId]: mode });
+    patchTicketLocal(updated);
+    updateTaskList();
+    toast(`Mode: ${mode}`, 'info');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function toggleAddTask() {
+  const a = document.getElementById('add-task-area');
+  a.classList.toggle('show');
+  if (a.classList.contains('show')) document.getElementById('nt-task').focus();
+}
+
+async function addTask() {
+  const nm = document.getElementById('nt-task').value.trim();
+  if (!nm) { toast('Task name required','err'); return; }
+  const st = document.getElementById('nt-tstatus').value;
+  const pl = document.getElementById('nt-tplan').value;
+  const du = document.getElementById('nt-tdue').value;
+  const nt = document.getElementById('nt-tnotes').value.trim();
+  const maxOrd = Math.max(0, ...currentTasks.map(t => t.fields[SF.order] || 0));
+  const fields = {
+    [SF.task]: nm,
+    [SF.tickets]: [currentTicket.id],
+    [SF.status]: st,
+    [SF.order]: maxOrd + 1,
+    ...(pl ? { [SF.planned]: pl } : {}),
+    ...(du ? { [SF.due]: du } : {}),
+    ...(nt ? { [SF.notes]: nt } : {}),
+  };
+  try {
+    const created = await atPost(T_TASK, fields);
+	const refetch = await atGet(T_TASK, {
+  		formula: `RECORD_ID()="${created.id}"`,
+  		pageSize: 1,
+	});
+	const full = refetch.records[0] || created;
+	currentTasks.push(full);
+    // Update task count on ticket in local state
+    const ti = allTickets.findIndex(t => t.id === currentTicket.id);
+    if (ti >= 0) {
+      const old = allTickets[ti].fields[TF.tasks] || [];
+      allTickets[ti].fields[TF.tasks] = [...old, { id: created.id, name: String(currentTasks.length) }];
+    }
+    updateTaskList();
+    document.getElementById('nt-task').value = '';
+    document.getElementById('nt-tplan').value = '';
+    document.getElementById('nt-tdue').value = '';
+    document.getElementById('nt-tnotes').value = '';
+    document.getElementById('add-task-area').classList.remove('show');
+    toast('Task added','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+document.getElementById('nt-task')?.addEventListener?.('keydown', e => { if(e.key==='Enter') addTask(); });
+
+// INLINE TASK EDITOR
+function editTask(id) {
+  const task = currentTasks.find(t => t.id === id);
+  if (!task) return;
+  const f = task.fields;
+  const sn = sv(f[SF.status]) || 'To Do';
+  const row = document.getElementById(`tr-${id}`);
+  if (!row) return;
+  row.outerHTML = `<div class="task-edit-row" id="tr-${id}">
+    <div class="teg">
+      <div class="fg fw"><div class="flabel">Task</div>
+        <input type="text" class="finput" id="te-nm-${id}" value="${ea(f[SF.task]||'')}" /></div>
+    </div>
+    <div class="teg">
+      <div class="fg"><div class="flabel">Status</div>
+        <select class="finput" id="te-st-${id}">
+          ${['To Do','In Progress','Waiting on Customer','Waiting on Others','Waiting on Office','Completed','Not Started']
+            .map(s=>`<option value="${s}" ${sn===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fg"><div class="flabel">Planned Date</div>
+        <input type="date" class="finput" id="te-pl-${id}" value="${f[SF.planned]||''}" /></div>
+      <div class="fg"><div class="flabel">Due Date</div>
+        <input type="date" class="finput" id="te-du-${id}" value="${f[SF.due]||''}" /></div>
+    </div>
+    <div class="fg" style="margin-bottom:8px"><div class="flabel">Notes</div>
+      <textarea class="finput" id="te-nt-${id}" style="min-height:55px">${esc(f[SF.notes]||'')}</textarea></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary btn-sm" onclick="saveTaskEdit('${id}')">Save</button>
+      <button class="btn btn-ghost btn-sm" onclick="updateTaskList()">Cancel</button>
+    </div>
+  </div>`;
+}
+
+async function saveTaskEdit(id) {
+  const nm = document.getElementById(`te-nm-${id}`)?.value.trim();
+  const st = document.getElementById(`te-st-${id}`)?.value;
+  const pl = document.getElementById(`te-pl-${id}`)?.value;
+  const du = document.getElementById(`te-du-${id}`)?.value;
+  const nt = document.getElementById(`te-nt-${id}`)?.value.trim();
+  if (!nm) { toast('Task name required','err'); return; }
+  const fields = { [SF.task]:nm, [SF.status]:st, [SF.planned]:pl||null, [SF.due]:du||null, [SF.notes]:nt||null };
+  const i = currentTasks.findIndex(t => t.id === id);
+  if (i >= 0) currentTasks[i] = { ...currentTasks[i], fields: { ...currentTasks[i].fields, ...fields } };
+  updateTaskList();
+  try {
+    const updated = await atPatch(T_TASK, id, fields);
+    patchTaskLocal(id, updated);
+    updateTaskList();
+    toast('Task saved','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ══════════════════════════════════════
+// DETAIL COMPANY / CONTACT
+// ══════════════════════════════════════
+function updateDetailHeader(coName, cnName) {
+  const sub = document.getElementById('dh-sub');
+  if (!sub) return;
+  sub.innerHTML = cnName ? `👤 ${esc(cnName)}` : '';
+}
+
+function initDetailContacts() {
+  const companyId = linkId(currentTicket?.fields[TF.company]?.[0]);
+  const contactId = linkId(currentTicket?.fields[TF.contact]?.[0]);
+  const coName    = resolveCompanyName(companyId);
+  const contactSel = document.getElementById('dt-contact');
+  if (!contactSel) return;
+
+  if (!companyId) {
+    contactSel.innerHTML = '<option value="">— None —</option>';
+    contactSel.disabled = true;
+    updateDetailHeader('', '');
+    return;
+  }
+
+  const contacts = contactsForCompany(companyId);
+  contactSel.innerHTML = '<option value="">— None —</option>' +
+    contacts.map(c => `<option value="${c.id}" ${c.id===contactId?'selected':''}>${esc(c.fields[COF_NAME] || c.id)}</option>`).join('');
+  contactSel.disabled = false;
+
+  if (contactId) {
+    const matched = contacts.find(c => c.id === contactId);
+    currentContactName = matched ? (matched.fields[COF_NAME] || '') : '';
+  }
+  updateDetailHeader(coName, currentContactName);
+}
+
+async function onDetailContactChange() {
+  const contactSel = document.getElementById('dt-contact');
+  const contactId  = contactSel?.value;
+  try {
+    const updated = await atPatch(T_TKT, currentTicket.id, {
+      [TF.contact]: contactId ? [{ id: contactId }] : null,
+    });
+    patchTicketLocal(updated);
+    currentContactName = contactId
+      ? (contactSel?.options[contactSel.selectedIndex]?.text || '')
+      : '';
+    const coId = linkId(currentTicket.fields[TF.company]?.[0]);
+    updateDetailHeader(resolveCompanyName(coId), currentContactName);
+    renderList();
+    toast('Contact updated', 'ok');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ══════════════════════════════════════
+// TICKET FIELD CHANGES
+// ══════════════════════════════════════
+function qc(fieldId, value, type) {
+  if (type === 'bool') changes[fieldId] = value;
+  else if (type === 'num') changes[fieldId] = value || null;
+  else changes[fieldId] = value || null;
+  document.getElementById('save-bar').style.display = 'flex';
+}
+
+async function saveChanges() {
+  if (!Object.keys(changes).length) return;
+  try {
+    const updated = await atPatch(T_TKT, currentTicket.id, changes);
+    patchTicketLocal(updated);
+    const fresh = await atFetch(`${T_TKT}/${currentTicket.id}?returnFieldsByFieldId=true`);
+    patchTicketLocal(fresh);
+    changes = {};
+    document.getElementById('save-bar').style.display = 'none';
+    renderList();
+    toast('Ticket saved','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function discardChanges() {
+  changes = {};
+  document.getElementById('save-bar').style.display = 'none';
+  renderDetail();
+}
+
+function recurringFreqOptions(selected) {
+  return ['Day','Week','Month','Year'].map(v =>
+    `<option value="${v}" ${selected===v?'selected':''}>${v}</option>`
+  ).join('');
+}
+
+function recurringSchedOptions(selected) {
+  return ['Regularly','From Completion'].map(v =>
+    `<option value="${v}" ${selected===v?'selected':''}>${v}</option>`
+  ).join('');
+}
+
+function toggleRecurringFields(show) {
+  const el = document.getElementById('recurring-fields');
+  if (el) el.style.display = show ? 'grid' : 'none';
+}
+
+// ══════════════════════════════════════
+// CLOSE / REOPEN
+// ══════════════════════════════════════
+async function closeTicket() {
+  if (!confirm(`Close ticket #${currentTicket.fields[TF.id]}?`)) return;
+  const f = currentTicket.fields;
+  const isRecurring = f[TF.recurring];
+  const recurringEnd = f[TF.recurringEnd];
+  const today = new Date().toISOString().split('T')[0];
+
+  // Check if recurring and not past end date
+  const shouldRecur = isRecurring &&
+    f[TF.recurringInterval] &&
+    sv(f[TF.recurringFrequency]) &&
+    (!recurringEnd || recurringEnd >= today);
+
+  try {
+    const closedAt = new Date().toISOString();
+    const updated = await atPatch(T_TKT, currentTicket.id, {
+      [TF.status]: 'Closed',
+      [TF.closed]: closedAt,
+    });
+    patchTicketLocal(updated);
+    // Re-fetch to get clean state
+    const fresh = await atFetch(`${T_TKT}/${currentTicket.id}?returnFieldsByFieldId=true`);
+    patchTicketLocal(fresh);
+    renderList();
+    renderDetail();
+    initDetailContacts();
+    toast('Ticket closed','ok');
+
+    if (shouldRecur) {
+      // Fire webhook to create next recurring ticket
+      const payload = {
+        ticket_id: currentTicket.id,
+        subject: f[TF.subject],
+        company: f[TF.company] ? [f[TF.company][0]] : [],
+        contact: f[TF.contact] ? [f[TF.contact][0]] : [],
+        type: sv(f[TF.type]),
+        priority: sv(f[TF.priority]),
+        channel: sv(f[TF.channel]),
+        desc: f[TF.desc] || '',
+        next_task: f[TF.nextTask] || '',
+        due_date: f[TF.due] || '',
+        planned_date: f[TF.planned] || '',
+        recurring_interval: f[TF.recurringInterval],
+        recurring_frequency: sv(f[TF.recurringFrequency]),
+        recurring_schedule: sv(f[TF.recurringSchedule]),
+        recurring_end: f[TF.recurringEnd] || '',
+        closed_at: closedAt,
+        task_ids: (f[TF.tasks] || []).map(l => linkId(l)).filter(Boolean),
+      };
+      try {
+        await fetch('https://karenwidas.app.n8n.cloud/webhook/create-recurring-ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        toast('Next recurring ticket queued ✓', 'ok');
+      } catch(e) {
+        toast('Recurring webhook failed: ' + e.message, 'err');
+      }
+    }
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function reopenTicket() {
+  try {
+    const updated = await atPatch(T_TKT, currentTicket.id, {
+      [TF.status]: 'Open',
+      [TF.closed]: null,
+    });
+    patchTicketLocal(updated);
+    const fresh = await atFetch(`${T_TKT}/${currentTicket.id}?returnFieldsByFieldId=true`);
+    patchTicketLocal(fresh);
+    renderList();
+    renderDetail();
+    initDetailContacts();
+    toast('Ticket reopened','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function patchTicketLocal(updated) {
+  const i = allTickets.findIndex(t => t.id === currentTicket.id);
+  if (i >= 0) {
+    allTickets[i] = { ...allTickets[i], fields:{ ...allTickets[i].fields, ...updated.fields } };
+    currentTicket = allTickets[i];
+  }
+}
+
+// ══════════════════════════════════════
+// SUBJECT EDIT
+// ══════════════════════════════════════
+function editSubject() {
+  document.getElementById('dh-subject').style.display = 'none';
+  const inp = document.getElementById('dh-subject-input');
+  inp.style.display = 'block'; inp.focus(); inp.select();
+}
+async function saveSubject() {
+  const inp = document.getElementById('dh-subject-input');
+  const v = inp.value.trim();
+  inp.style.display = 'none';
+  document.getElementById('dh-subject').style.display = 'block';
+  const old = currentTicket.fields[TF.subject];
+  if (!v || v === old) return;
+  try {
+    const updated = await atPatch(T_TKT, currentTicket.id, { [TF.subject]: v });
+    patchTicketLocal(updated);
+    document.getElementById('dh-subject').textContent = v;
+    renderList();
+    toast('Subject updated','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+function cancelSubject() {
+  document.getElementById('dh-subject-input').style.display = 'none';
+  document.getElementById('dh-subject').style.display = 'block';
+}
+
+// ══════════════════════════════════════
+// REFRESH
+// ══════════════════════════════════════
+async function refreshDetail() {
+  if (!currentTicket) return;
+  try {
+    const updated = await atFetch(`${T_TKT}/${currentTicket.id}?returnFieldsByFieldId=true`);
+    patchTicketLocal(updated);
+    currentTasks = await loadTasks(currentTicket);
+    renderDetail();
+    renderList();
+    toast('Refreshed','info');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ══════════════════════════════════════
+// DESCRIPTION — view/edit/drop
+// ══════════════════════════════════════
+function renderDescHtml(text) {
+  if (!text) return '<span style="color:var(--muted);font-style:italic;user-select:none">No description — double-click to add</span>';
+  // Split on URLs (https://, http://, message://) — escape non-URL segments, wrap URLs in <a>
+  const urlRe = /(https?:\/\/[^\s<>"]+|message:\/\/[^\s<>"]*|airmail:\/\/[^\s<>"]*)/g;
+  let result = '', last = 0, m;
+  while ((m = urlRe.exec(text)) !== null) {
+    if (m.index > last) result += esc(text.slice(last, m.index)).replace(/\n/g, '<br>');
+    const url = m[0];
+    const label = url.length > 70 ? url.slice(0, 67) + '…' : url;
+    result += `<a href="${url.replace(/"/g,'%22')}" target="_blank" rel="noopener">${esc(label)}</a>`;
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) result += esc(text.slice(last)).replace(/\n/g, '<br>');
+  return result;
+}
+
+function startDescEdit() {
+  const view = document.getElementById('desc-view');
+  const edit = document.getElementById('desc-edit');
+  if (!view || !edit) return;
+  edit.value = currentTicket?.fields[TF.desc] || '';
+  view.style.display = 'none';
+  edit.style.display = '';
+  edit.focus();
+  edit.selectionStart = edit.selectionEnd = edit.value.length;
+}
+
+function saveDescEdit() {
+  const view = document.getElementById('desc-view');
+  const edit = document.getElementById('desc-edit');
+  if (!view || !edit || edit.style.display === 'none') return;
+  const val = edit.value;
+  // Keep currentTicket in sync so re-opening edit mode loads the latest text
+  if (currentTicket) currentTicket.fields[TF.desc] = val || null;
+  qc(TF.desc, val || null, 'text');
+  view.innerHTML = renderDescHtml(val);
+  edit.style.display = 'none';
+  view.style.display = '';
+}
+
+function cancelDescEdit() {
+  const view = document.getElementById('desc-view');
+  const edit = document.getElementById('desc-edit');
+  if (!view || !edit) return;
+  edit.style.display = 'none';
+  view.style.display = '';
+}
+
+function toggleRefForm() {
+  const form = document.getElementById('ref-form');
+  if (!form) return;
+  const visible = form.style.display === 'flex';
+  form.style.display = visible ? 'none' : 'flex';
+  if (!visible) {
+    // Pre-fill URL from clipboard if it looks like a URL
+    navigator.clipboard?.readText().then(t => {
+      t = (t || '').trim();
+      if (/^(airmail|message|https?):\/\//i.test(t)) {
+        const urlEl = document.getElementById('ref-url');
+        if (urlEl && !urlEl.value) urlEl.value = t;
+      }
+    }).catch(()=>{});
+    setTimeout(() => document.getElementById('ref-label')?.focus(), 50);
+  }
+}
+
+async function submitRefForm() {
+  const label = (document.getElementById('ref-label')?.value || '').trim();
+  const url   = (document.getElementById('ref-url')?.value || '').trim();
+  if (!label && !url) { toast('Enter a label or URL', 'err'); return; }
+  await appendDescRef(label || url, label && url ? url : '');
+  // Reset + close
+  document.getElementById('ref-label').value = '';
+  document.getElementById('ref-url').value = '';
+  document.getElementById('ref-form').style.display = 'none';
+}
+
+async function descDrop(event) {
+  event.preventDefault();
+  document.getElementById('desc-view')?.classList.remove('drag-over');
+  const dt = event.dataTransfer;
+  try { await _descDropInner(dt); } catch(e) { toast('Drop error: ' + e.message, 'err'); console.error('descDrop error:', e); }
+}
+
+async function _descDropInner(dt) {
+
+  // Gather all available types and their values
+  const types = [...(dt.types || [])];
+  console.log('=== descDrop types:', types);
+  const typeData = {};
+  types.forEach(t => {
+    try { const v = dt.getData(t); typeData[t] = v; console.log(`  [${t}]:`, v.slice(0, 300)); }
+    catch(e) { typeData[t] = '(unreadable)'; console.log(`  [${t}]: (unreadable)`); }
+  });
+  if (dt.files?.length) {
+    [...dt.files].forEach(f => console.log('  file:', f.name, f.type, f.size));
+  }
+
+  // Check for dropped .eml files — Airmail 5 drops emails as .eml files
+  const emlFile = dt.files ? [...dt.files].find(f => f.name?.endsWith('.eml') || f.type === 'message/rfc822') : null;
+  if (emlFile) {
+    const text = await emlFile.text();
+    const subjectM = text.match(/^Subject:\s*(.+)/im);
+    const msgIdM   = text.match(/^Message-ID:\s*<([^>]+)>/im);
+    // Decode quoted-printable encoded subjects (e.g. =?UTF-8?Q?...?=)
+    let subject = subjectM ? subjectM[1].trim() : emlFile.name.replace(/\.eml$/i,'');
+    subject = subject.replace(/=\?[^?]+\?[QB]\?([^?]*)\?=/gi, (_, enc) => {
+      try { return decodeURIComponent(enc.replace(/=([0-9A-F]{2})/gi, '%$1').replace(/_/g,' ')); } catch { return enc; }
+    });
+    // Build airmail:// deep link — opens the email directly in Airmail 5
+    const msgUrl = msgIdM ? `airmail://message?id=${encodeURIComponent(msgIdM[1])}` : '';
+    await appendDescRef(subject, msgUrl);
+    return;
+  }
+
+  // Try standard URL data types
+  const uri   = (dt.getData('text/uri-list') || dt.getData('URL') || dt.getData('public.url') || '').trim();
+  const plain = (dt.getData('text/plain') || dt.getData('public.utf8-plain-text') || '').trim();
+  const html  = dt.getData('text/html') || '';
+
+  // Extract href from HTML if present
+  let htmlUrl = '';
+  const hrefM = html.match(/href="([^"]+)"/i);
+  if (hrefM) htmlUrl = decodeURIComponent(hrefM[1]);
+
+  // If plain text looks like a URL scheme we recognise, treat it as the URL
+  const plainLooksLikeUrl = /^(airmail|message|https?):\/\//i.test(plain);
+
+  const resolvedUri = uri || htmlUrl || (plainLooksLikeUrl ? plain : '');
+  const resolvedLabel = (!plainLooksLikeUrl && plain) ? plain : resolvedUri;
+
+  if (!resolvedUri && !plain) {
+    const typeList = types.length ? types.join(', ') : 'none';
+    toast(`Drop had no usable URL. Types: ${typeList}`, 'err', 6000);
+    return;
+  }
+  await appendDescRef(resolvedLabel || resolvedUri, resolvedUri !== resolvedLabel ? resolvedUri : '');
+}
+
+async function appendDescRef(label, url) {
+  const d = new Date();
+  const stamp = `${d.getMonth()+1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+  let toAdd = `${stamp} ${label}`;
+  if (url && url !== label) toAdd += `\n${url}`;
+  const current = currentTicket?.fields[TF.desc] || '';
+  const newVal  = current ? (toAdd + '\n\n' + current) : toAdd;
+  const view = document.getElementById('desc-view');
+  const edit = document.getElementById('desc-edit');
+  if (view) view.innerHTML = renderDescHtml(newVal);
+  if (edit) edit.value = newVal;
+  // Optimistic update — so startDescEdit loads the right value even if patch is still in flight
+  if (currentTicket) currentTicket.fields[TF.desc] = newVal;
+  try {
+    const updated = await atPatch(T_TKT, currentTicket.id, { [TF.desc]: newVal });
+    patchTicketLocal(updated);
+    toast('Reference added','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ══════════════════════════════════════
+// NEW TICKET
+// ══════════════════════════════════════
+async function createTicket() {
+  const sub = document.getElementById('nt-subject').value.trim();
+  if (!sub) { toast('Subject required','err'); return; }
+  const btn = document.getElementById('nt-save-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Creating…';
+  const companyId = document.getElementById('nt-company').value;
+  const contactId = document.getElementById('nt-contact').value;
+  const fields = {
+    [TF.subject]: sub,
+    [TF.status]: 'Open',
+    ...(companyId ? { [TF.company]: [companyId] } : {}),
+    ...(contactId ? { [TF.contact]: [contactId] } : {}),
+    ...(document.getElementById('nt-type').value     ? { [TF.type]:     document.getElementById('nt-type').value }     : {}),
+    ...(document.getElementById('nt-priority').value ? { [TF.priority]: document.getElementById('nt-priority').value } : {}),
+    ...(document.getElementById('nt-channel').value  ? { [TF.channel]:  document.getElementById('nt-channel').value }  : {}),
+    ...(document.getElementById('nt-planned').value   ? { [TF.planned]:  document.getElementById('nt-planned').value }   : {}),
+    ...(document.getElementById('nt-due').value        ? { [TF.due]:      document.getElementById('nt-due').value }       : {}),
+    ...(document.getElementById('nt-desc').value.trim() ? { [TF.desc]:   document.getElementById('nt-desc').value.trim() } : {}),
+  };
+  try {
+    const created = await atPost(T_TKT, fields);
+    // Re-fetch with full display fields using atGet (proper URL parameter encoding)
+    const refetch = await atGet(T_TKT, {
+      fields: [TF.id,TF.subject,TF.company,TF.status,TF.priority,TF.type,TF.channel,TF.due,TF.planned,TF.desc,TF.nextTask,TF.tasks,TF.closed,TF.contact,TF.created,TF.updated],
+      formula: `RECORD_ID()="${created.id}"`,
+      pageSize: 1,
+    });
+    const full = refetch.records[0] || created;
+    allTickets.unshift(full);
+    closeModal('nt-modal');
+    // Reset form
+    ['nt-subject','nt-type','nt-priority','nt-channel','nt-planned','nt-due','nt-desc'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('nt-company').value = '';
+    document.getElementById('nt-contact').innerHTML = '<option value="">— Select company first —</option>';
+    document.getElementById('nt-contact').disabled = true;
+    renderList();
+    await selectTicket(full.id);
+    toast('Ticket created','ok');
+  } catch(e) { toast(e.message,'err'); }
+  finally { btn.disabled=false; btn.textContent='Create Ticket'; }
+}
+
+// ══════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════
+function setFilter(status, el) {
+  activeFilter = status;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+// ══════════════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════════════
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+  if (id === 'nt-modal') {
+    populateCompanyDropdown(); // ensure fresh list in case it loaded after init
+    document.getElementById('nt-subject').focus();
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+// Close modals on bg click
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('show'); }));
+
+// ══════════════════════════════════════
+// UTIL
+// ══════════════════════════════════════
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ea(s)  { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function fd(d)  { if(!d) return ''; return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function fdt(d) { if(!d) return ''; return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}); }
+function ov(d)  { return d && new Date(d+'T23:59:59') < new Date(); }
+
+function sbc(s) {
+  return {
+    'Open':'bs-open','Waiting on Customer':'bs-wc','Waiting on Others':'bs-wo',
+    'Waiting on Office':'bs-woff','On Hold':'bs-hold','Closed':'bs-closed',
+  }[s] || 'bs-open';
+}
+function pbc(p) {
+  return {'Low':'bp-low','Normal':'bp-normal','Medium':'bp-medium','High':'bp-high'}[p]||'bp-normal';
+}
+function tsc(s) {
+  return {
+    'To Do':'ts-todo','In Progress':'ts-inprog','Waiting on Customer':'ts-wc',
+    'Waiting on Others':'ts-wo','Waiting on Office':'ts-woff','Completed':'ts-done','Not Started':'ts-ns',
+  }[s]||'ts-todo';
+}
+
+function toast(msg, type='info', ms=3000) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type==='ok'?'ok':type==='err'?'err':'info'}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(), ms);
+}
+
+// ══════════════════════════════════════
+// KEYBOARD
+// ══════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { document.querySelectorAll('.modal-bg.show').forEach(m=>m.classList.remove('show')); }
+  // Ctrl+Opt+T → New Ticket
+  if (e.ctrlKey && e.altKey && e.code === 'KeyT') {
+    e.preventDefault();
+    showModal('nt-modal');
+    setTimeout(() => document.getElementById('nt-subject')?.focus(), 50);
+  }
+});
+
+// ══════════════════════════════════════
+// START
+// ══════════════════════════════════════
+init();
+</script>
+</body>
+</html>
