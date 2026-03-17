@@ -741,7 +741,7 @@ async function load() {
   try {
     const [tkts, cos] = await Promise.all([
       loadAll(T_TKT, {
-        formula: `NOT({${TF.status}}="Closed")`,
+        formula: `NOT({Ticket Status}="Closed")`,
         sort: [{ f: TF.due, d: 'asc' }],
       }),
       loadAll(T_CO, { fields: [CF_NAME] }),

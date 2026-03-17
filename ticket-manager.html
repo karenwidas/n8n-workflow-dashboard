@@ -408,7 +408,10 @@ async function init() {
   API_KEY = localStorage.getItem('at_tk') || '';
   if (!API_KEY) { showModal('cfg-modal'); return; }
   await ensureTaskModeField(); // get field ID before loading tickets
-  loadTickets();
+  loadTickets().then(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash && hash.startsWith('rec')) selectTicket(hash);
+  });
   loadCompanies();
   loadContacts();
   loadSeasons();
