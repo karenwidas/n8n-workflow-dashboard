@@ -5,6 +5,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ticket Manager — CRM</title>
+<link rel="manifest" href="/ticket-manager/manifest.json">
+<meta name="theme-color" content="#00304F">
+<link rel="apple-touch-icon" href="/icons/icon-ticket-manager.svg">
 <style>
 :root {
   --cocard-blue: #00304F;
@@ -1783,6 +1786,11 @@ document.addEventListener('keydown', e => {
 // START
 // ══════════════════════════════════════
 init();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' });
+}
 </script>
 </body>
 </html>

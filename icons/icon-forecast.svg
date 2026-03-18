@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#00304F"/>
+  <!-- calendar body -->
+  <rect x="72" y="136" width="368" height="296" rx="20" fill="white" opacity="0.15"/>
+  <!-- calendar header bar -->
+  <rect x="72" y="136" width="368" height="80" rx="20" fill="#69932F"/>
+  <!-- header corner fix (bottom of header is flat) -->
+  <rect x="72" y="176" width="368" height="40" fill="#69932F"/>
+  <!-- calendar day dots -->
+  <circle cx="152" cy="292" r="22" fill="white"/>
+  <circle cx="256" cy="292" r="22" fill="white" opacity="0.4"/>
+  <circle cx="360" cy="292" r="22" fill="white" opacity="0.4"/>
+  <circle cx="152" cy="366" r="22" fill="white" opacity="0.4"/>
+  <circle cx="256" cy="366" r="22" fill="white" opacity="0.4"/>
+  <circle cx="360" cy="366" r="22" fill="white" opacity="0.2"/>
+</svg>

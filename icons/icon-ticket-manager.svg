@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#00304F"/>
+  <!-- three rows = ticket list -->
+  <rect x="72" y="128" width="368" height="68" rx="14" fill="white" opacity="0.9"/>
+  <!-- checkbox dot on row 1 -->
+  <circle cx="112" cy="162" r="18" fill="#69932F"/>
+  <!-- row 2: accent -->
+  <rect x="72" y="222" width="368" height="68" rx="14" fill="#69932F"/>
+  <circle cx="112" cy="256" r="18" fill="white"/>
+  <!-- row 3: dim -->
+  <rect x="72" y="316" width="368" height="68" rx="14" fill="white" opacity="0.25"/>
+  <circle cx="112" cy="350" r="18" fill="white" opacity="0.5"/>
+</svg>

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#00304F">
+<link rel="apple-touch-icon" href="/icons/icon-dashboard.svg">
 <style>
   :root {
     /* CoCard Brand Colors */
@@ -781,6 +784,11 @@ async function sendMessage(btn) {
 
 refreshAll();
 setInterval(refreshAll, 300000);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' });
+}
 </script>
 </body>
 </html>
