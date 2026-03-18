@@ -1,0 +1,285 @@
+{
+  "name": "FM Season Annual Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "triggerAtHour": 8, "triggerAtMinute": 0, "triggerAtDay": [1], "triggerAtMonth": [3] }]
+        },
+        "options": { "timezone": "America/Chicago" }
+      },
+      "id": "n1",
+      "name": "Schedule: March 1st 8am CST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "formUrl",     "value": "https://karenwidas.app.n8n.cloud/form/fm-season-dates", "type": "string" },
+            { "id": "a2", "name": "notifyEmail", "value": "kwidas@me.com",                                         "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n2",
+      "name": "Set: Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ '{Season Year}=' + (new Date().getFullYear() - 1) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "HTTP: Get Previous FM Seasons",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Takes 1 item (Airtable GET response) → outputs 1 item per FM market\nconst records = $input.first().json.records || [];\nif (records.length === 0) throw new Error('No previous FM Season records found');\n\nconst currentYear = new Date().getFullYear();\n\nreturn records.map(r => ({\n  json: {\n    companyIds:  r.fields['Company'] || [],\n    contactIds:  r.fields['Contact'] || [],\n    yearRound:   !!r.fields['Year Round'],\n    marketLabel: (r.fields['Season Name'] || 'Unknown').replace(/[\\u2013\\u2014-].*$/, '').trim(),\n    currentYear\n  }\n}));\n"
+      },
+      "id": "n4",
+      "name": "Code: Prep Season Payloads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: [{ fields: { fldnbXmhWFg5sebDU: $json.companyIds, fldK1yFoKlQ9w5QKV: $json.contactIds, fldTMopS2jOnOH8Kc: $json.currentYear, fldRuSa2TGm5Y1a3k: $json.yearRound } }] }) }}",
+        "options": {}
+      },
+      "id": "n5",
+      "name": "HTTP: Create FM Season",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs once per market — pairs new season ID with market context\nconst seasonId = $input.item.json.records[0].id;\nconst market   = $('Code: Prep Season Payloads').item.json;\n\nreturn [{\n  json: {\n    seasonId,\n    ticketSubject: market.currentYear + ' Season Setup - ' + market.marketLabel,\n    yearRound:     market.yearRound,\n    contactIds:    market.contactIds,\n    marketLabel:   market.marketLabel\n  }\n}];\n"
+      },
+      "id": "n6",
+      "name": "Code: Prep Ticket Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblxZJUvRDKgLywUq",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: [{ fields: { fldIsJTQjAYN7ajXl: $json.ticketSubject, fld3djwQzzRgsO2bA: 'Open', fldMrv5gUTSEmWKYy: [$json.seasonId] } }] }) }}",
+        "options": {}
+      },
+      "id": "n7",
+      "name": "HTTP: Create Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1560, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs once per market — expands to one item per task\nconst ticketId = $input.item.json.records[0].id;\nconst ctx      = $('Code: Prep Ticket Payload').item.json;\n\nconst taskDefs = ctx.yearRound ? [\n  { Task: 'Confirm data plan is active',     Order: 1 },\n  { Task: 'Create QB invoice for data plan', Order: 2 }\n] : [\n  { Task: 'Get market start and end dates from market manager',        Order: 1 },\n  { Task: 'Send Remove Hold request to office (email)',                Order: 2 },\n  { Task: 'Office confirms hold removed - account open',              Order: 3 },\n  { Task: 'Activate data plan in Dejavoo',                             Order: 4 },\n  { Task: 'Notify customer - account ready, request test transaction', Order: 5 },\n  { Task: 'Confirm test transaction successful',                       Order: 6 },\n  { Task: '[POST-SEASON] Confirm all batches closed with customer',    Order: 7 },\n  { Task: '[POST-SEASON] Send Close request to office (email)',        Order: 8 },\n  { Task: '[POST-SEASON] Office confirms account closed',              Order: 9 },\n  { Task: '[POST-SEASON] Deactivate data plan in Dejavoo',             Order: 10 },\n  { Task: 'Create QB invoice for data plan',                           Order: 11 }\n];\n\nreturn taskDefs.map(t => ({\n  json: {\n    task:        t.Task,\n    order:       t.Order,\n    ticketId,\n    seasonId:    ctx.seasonId,\n    yearRound:   ctx.yearRound,\n    contactIds:  ctx.contactIds,\n    marketLabel: ctx.marketLabel\n  }\n}));\n"
+      },
+      "id": "n8",
+      "name": "Code: Expand to Task Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tbl40uFmR8J8rM75z",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: [{ fields: { fldZKDhv2MogYM6xV: $json.task, fldLPrjNWGqkCp9dm: $json.order, fldfTkbMH4xh9AfEb: 'To Do', fldS9lPWMkcf5Hr9r: [$json.ticketId] } }] }) }}",
+        "options": {}
+      },
+      "id": "n9",
+      "name": "HTTP: Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2000, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Read from Expand node — HTTP: Create Task response has no context\nconst taskItems = $('Code: Expand to Task Items').all();\n\nconst seen   = new Set();\nconst unique = [];\n\nfor (const item of taskItems) {\n  if (!seen.has(item.json.seasonId)) {\n    seen.add(item.json.seasonId);\n    unique.push({\n      json: {\n        seasonId:    item.json.seasonId,\n        ticketId:    item.json.ticketId,\n        yearRound:   item.json.yearRound,\n        contactIds:  item.json.contactIds,\n        marketLabel: item.json.marketLabel\n      }\n    });\n  }\n}\n\nreturn unique;\n"
+      },
+      "id": "n10",
+      "name": "Code: Dedupe Season-Ticket Pairs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx/' + $json.seasonId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { fldIXY5M7Is6t6lJG: [$json.ticketId] } }) }}",
+        "options": {}
+      },
+      "id": "n11",
+      "name": "HTTP: Link Ticket to Season",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2440, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Read from Dedupe node — HTTP: Link Ticket response has no context\nreturn $('Code: Dedupe Season-Ticket Pairs').all().filter(item =>\n  !item.json.yearRound && item.json.contactIds.length > 0\n);\n"
+      },
+      "id": "n12",
+      "name": "Code: Filter Seasonal Markets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2660, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblR80p5dAGRBx68K/' + $json.contactIds[0] }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "n13",
+      "name": "HTTP: Get Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2880, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pairs contact GET response with seasonal market context\nconst contact = $input.item.json;\nconst market  = $('Code: Filter Seasonal Markets').item.json;\nconst formUrl = $('Set: Config').first().json.formUrl;\n\nconst email = contact.fields?.Email || null;\n\nif (!email) throw new Error('No email found for ' + market.marketLabel);\n\nreturn [{ json: { email, marketLabel: market.marketLabel, formUrl } }];\n"
+      },
+      "id": "n14",
+      "name": "Code: Extract Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3100, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.marketLabel + ' - Please Submit Your ' + new Date().getFullYear() + ' Season Dates' }}",
+        "emailType": "html",
+        "message": "=<p>Hi,</p><p>It's that time of year! Please submit your <strong>{{ new Date().getFullYear() }} season start and end dates</strong> using the link below so we can get your account ready.</p><p><a href=\"{{ $json.formUrl }}\">Submit Season Dates</a></p><p>Thanks,<br>Karen</p>",
+        "options": {}
+      },
+      "id": "n15",
+      "name": "Gmail: Send Date Request",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [3320, 300],
+      "credentials": {
+        "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail OAuth2 API" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const currentYear = new Date().getFullYear();\nconst items = $input.all();\nconst markets = items.map(i => i.json.marketLabel + ' (' + i.json.email + ')').join(', ');\nreturn [{\n  json: {\n    summary: 'FM Season Annual Creator completed for ' + currentYear + '. Records, tickets, and tasks created for all markets. Date request emails sent to: ' + (markets || 'none') + '.'\n  }\n}];\n"
+      },
+      "id": "n16",
+      "name": "Code: Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3540, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "kwidas@me.com",
+        "subject": "={{ 'FM Season Annual Creator - ' + new Date().getFullYear() + ' Setup Complete' }}",
+        "emailType": "text",
+        "message": "={{ $json.summary }}",
+        "options": {}
+      },
+      "id": "n17",
+      "name": "Gmail: Notify Pooks",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [3760, 300],
+      "credentials": {
+        "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail OAuth2 API" }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule: March 1st 8am CST":     { "main": [[{ "node": "Set: Config",                     "type": "main", "index": 0 }]] },
+    "Set: Config":                      { "main": [[{ "node": "HTTP: Get Previous FM Seasons",    "type": "main", "index": 0 }]] },
+    "HTTP: Get Previous FM Seasons":    { "main": [[{ "node": "Code: Prep Season Payloads",       "type": "main", "index": 0 }]] },
+    "Code: Prep Season Payloads":       { "main": [[{ "node": "HTTP: Create FM Season",           "type": "main", "index": 0 }]] },
+    "HTTP: Create FM Season":           { "main": [[{ "node": "Code: Prep Ticket Payload",        "type": "main", "index": 0 }]] },
+    "Code: Prep Ticket Payload":        { "main": [[{ "node": "HTTP: Create Ticket",              "type": "main", "index": 0 }]] },
+    "HTTP: Create Ticket":              { "main": [[{ "node": "Code: Expand to Task Items",       "type": "main", "index": 0 }]] },
+    "Code: Expand to Task Items":       { "main": [[{ "node": "HTTP: Create Task",                "type": "main", "index": 0 }]] },
+    "HTTP: Create Task":                { "main": [[{ "node": "Code: Dedupe Season-Ticket Pairs", "type": "main", "index": 0 }]] },
+    "Code: Dedupe Season-Ticket Pairs": { "main": [[{ "node": "HTTP: Link Ticket to Season",      "type": "main", "index": 0 }]] },
+    "HTTP: Link Ticket to Season":      { "main": [[{ "node": "Code: Filter Seasonal Markets",    "type": "main", "index": 0 }]] },
+    "Code: Filter Seasonal Markets":    { "main": [[{ "node": "HTTP: Get Contact",                "type": "main", "index": 0 }]] },
+    "HTTP: Get Contact":                { "main": [[{ "node": "Code: Extract Email",              "type": "main", "index": 0 }]] },
+    "Code: Extract Email":              { "main": [[{ "node": "Gmail: Send Date Request",         "type": "main", "index": 0 }]] },
+    "Gmail: Send Date Request":         { "main": [[{ "node": "Code: Build Summary",              "type": "main", "index": 0 }]] },
+    "Code: Build Summary":              { "main": [[{ "node": "Gmail: Notify Pooks",              "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

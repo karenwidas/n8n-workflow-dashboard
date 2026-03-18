@@ -22,10 +22,10 @@
     --bg:      #eef2f5;
     --white:   #ffffff;
     --card:    #ffffff;
-    --border:  #d8dfe6;
-    --muted:   #7a8a96;
-    --text:    #1a2a35;
-    --text2:   #3d5060;
+    --border:  #c8d8e4;
+    --muted:   #6a8fa8;
+    --text:    #001f33;
+    --text2:   #2a5070;
 
     --section-overdue:  #fdf1f0;
     --section-today:    #f0f7ea;
@@ -41,7 +41,7 @@
   }
 
   body {
-    font-family: 'Georgia', 'Times New Roman', serif;
+    font-family: Arial, Tahoma, Helvetica, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -71,7 +71,6 @@
   }
   #header h1 span.icon { font-size: 20px; }
   .header-date {
-    font-family: 'Courier New', monospace;
     font-size: 13px;
     color: rgba(255,255,255,.6);
     letter-spacing: .5px;
@@ -140,7 +139,6 @@
   .nav-count {
     margin-left: auto;
     font-size: 11px;
-    font-family: 'Courier New', monospace;
     background: rgba(255,255,255,.15);
     border-radius: 10px;
     padding: 1px 7px;
@@ -175,18 +173,15 @@
     font-weight: bold;
     letter-spacing: .3px;
     color: var(--text);
-    font-family: 'Georgia', serif;
   }
   .section-sub {
     font-size: 11px;
     color: var(--muted);
-    font-family: 'Courier New', monospace;
     margin-left: 2px;
   }
   .section-count {
     margin-left: auto;
     font-size: 11px;
-    font-family: 'Courier New', monospace;
     color: var(--muted);
   }
 
@@ -198,7 +193,6 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--muted);
-    font-family: 'Courier New', monospace;
     margin-bottom: 7px;
     padding-left: 2px;
   }
@@ -262,7 +256,6 @@
   }
   .pill {
     font-size: 10px;
-    font-family: 'Courier New', monospace;
     padding: 2px 6px;
     border-radius: 3px;
     font-weight: bold;
@@ -284,7 +277,6 @@
   }
   .date-badge {
     font-size: 11px;
-    font-family: 'Courier New', monospace;
     padding: 3px 8px;
     border-radius: 4px;
     display: flex;
@@ -324,7 +316,7 @@
   }
   .edit-input {
     font-size: 12px;
-    font-family: 'Georgia', serif;
+    font-family: inherit;
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 4px 8px;
@@ -333,7 +325,7 @@
     transition: border-color .12s;
   }
   .edit-input:focus { outline: none; border-color: var(--green); }
-  input[type="date"].edit-input { font-family: 'Courier New', monospace; }
+  input[type="date"].edit-input { font-family: inherit; }
 
   .status-btns { display: flex; gap: 5px; }
   .status-btn {
@@ -391,7 +383,6 @@
   }
   .task-status-badge {
     font-size: 10px;
-    font-family: 'Courier New', monospace;
     padding: 1px 5px;
     border-radius: 3px;
     flex-shrink: 0;
@@ -404,7 +395,6 @@
     font-size: 11px;
     color: var(--navy);
     text-decoration: none;
-    font-family: 'Courier New', monospace;
     padding: 3px 7px;
     border: 1px solid var(--navy);
     border-radius: 4px;
