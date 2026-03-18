@@ -357,6 +357,21 @@
   .edit-input:focus { outline: none; border-color: var(--green); }
   input[type="date"].edit-input { font-family: inherit; }
 
+  /* ── Date Picker ── */
+  .dp-wrap{position:relative;display:inline-block}
+  .dp-trigger{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1.5px solid #cdd5dc;border-radius:6px;cursor:pointer;font-size:12px;background:#fff;min-height:30px;transition:border-color .15s;white-space:nowrap}
+  .dp-trigger:hover{border-color:var(--green)}
+  .dp-trigger.dp-empty{color:#8fa8b8}
+  .dp-disp{font-variant-numeric:tabular-nums}
+  .dp-x{opacity:.45;font-size:15px;line-height:1;cursor:pointer;padding:0 2px}
+  .dp-x:hover{opacity:1}
+  .dp-cal{opacity:.35;font-size:11px}
+  .dp-pop{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:600;background:#fff;border:1.5px solid #cdd5dc;border-radius:8px;padding:10px;box-shadow:0 4px 18px rgba(0,30,50,.13);min-width:190px}
+  .dp-pop.dp-open{display:block}
+  .dp-quick{display:flex;gap:4px;margin-top:6px}
+  .dp-quick button{flex:1;padding:3px 2px;font-size:11px;background:#fff;border:1.5px solid #cdd5dc;border-radius:4px;cursor:pointer;font-family:inherit;color:#2a5070;transition:border-color .15s}
+  .dp-quick button:hover{border-color:var(--green);color:var(--green)}
+
   .status-btns { display: flex; gap: 5px; }
   .status-btn {
     font-size: 11px;
@@ -820,6 +835,72 @@ function nextWeekStart() {
   return d.toISOString().split('T')[0];
 }
 
+// ══════════════════════════════════════
+// DATE PICKER
+// ══════════════════════════════════════
+function renderDatePicker(inputId, value, cbExpr) {
+  const v = value || '';
+  const display = v ? formatDate(v) : 'None';
+  const cbAttr = cbExpr ? ` data-dp-cb="${cbExpr.replace(/"/g,'&quot;')}"` : '';
+  return `<div class="dp-wrap" id="dpw-${inputId}"${cbAttr}>
+    <input type="hidden" id="${inputId}" value="${v}">
+    <div class="dp-trigger${!v?' dp-empty':''}" onclick="dpOpen('${inputId}')">
+      <span class="dp-disp" id="dp-d-${inputId}">${display}</span>
+      <span class="dp-x" id="dp-x-${inputId}" onclick="event.stopPropagation();dpSet('${inputId}','')" style="${v?'':'display:none'}" title="Clear date">×</span>
+      <span class="dp-cal">🗓</span>
+    </div>
+    <div class="dp-pop" id="dp-pop-${inputId}">
+      <input type="date" class="edit-input" style="width:100%;box-sizing:border-box" value="${v}"
+        onchange="dpSet('${inputId}',this.value)">
+      <div class="dp-quick">
+        <button onclick="dpBump('${inputId}',1)">+1d</button>
+        <button onclick="dpBump('${inputId}',7)">+1w</button>
+        <button onclick="dpBump('${inputId}',30)">+1m</button>
+        <button onclick="dpSet('${inputId}','')">Clear</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function dpOpen(id) {
+  const pop = document.getElementById('dp-pop-'+id);
+  if (!pop) return;
+  const isOpen = pop.classList.contains('dp-open');
+  document.querySelectorAll('.dp-pop.dp-open').forEach(p => p.classList.remove('dp-open'));
+  if (!isOpen) pop.classList.add('dp-open');
+}
+
+function dpSet(id, val) {
+  const hidden = document.getElementById(id);
+  if (!hidden) return;
+  hidden.value = val || '';
+  const disp = document.getElementById('dp-d-'+id);
+  if (disp) disp.textContent = val ? formatDate(val) : 'None';
+  const trigger = document.getElementById('dpw-'+id)?.querySelector('.dp-trigger');
+  if (trigger) trigger.classList.toggle('dp-empty', !val);
+  const xBtn = document.getElementById('dp-x-'+id);
+  if (xBtn) xBtn.style.display = val ? '' : 'none';
+  const nativeInp = document.getElementById('dp-pop-'+id)?.querySelector('input[type=date]');
+  if (nativeInp) nativeInp.value = val || '';
+  const cbExpr = document.getElementById('dpw-'+id)?.dataset?.dpCb;
+  if (cbExpr) (new Function('v', cbExpr))(val || null);
+  document.getElementById('dp-pop-'+id)?.classList.remove('dp-open');
+}
+
+function dpBump(id, days) {
+  const hidden = document.getElementById(id);
+  if (!hidden) return;
+  const cur = hidden.value ? new Date(hidden.value + 'T00:00:00') : new Date();
+  cur.setDate(cur.getDate() + days);
+  dpSet(id, cur.toISOString().split('T')[0]);
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dp-wrap')) {
+    document.querySelectorAll('.dp-pop.dp-open').forEach(p => p.classList.remove('dp-open'));
+  }
+});
+
 function formatDate(str) {
   if (!str) return '';
   const [y, m, d] = str.split('-');
@@ -1154,9 +1235,9 @@ function renderCardBody(id) {
   body.innerHTML = `
     <div class="edit-row">
       <span class="edit-label">Due</span>
-      <input type="date" class="edit-input" value="${esc(dueVal)}" onchange="queueChange('${id}','${TF.due}',this.value)" />
+      ${renderDatePicker('dp-fc-due-'+id, dueVal, `queueChange('${id}','${TF.due}',v)`)}
       <span class="edit-label" style="margin-left:10px;">Planned</span>
-      <input type="date" class="edit-input" value="${esc(plannedVal)}" onchange="queueChange('${id}','${TF.planned}',this.value)" />
+      ${renderDatePicker('dp-fc-plan-'+id, plannedVal, `queueChange('${id}','${TF.planned}',v)`)}
     </div>
     <div class="edit-row">
       <span class="edit-label">Status</span>

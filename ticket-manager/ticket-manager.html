@@ -94,6 +94,21 @@ body{font-family:Arial,Tahoma,Helvetica,sans-serif;display:flex;height:100vh;ove
 .due-lbl{font-size:10px;color:#6a8fa8}
 .due-lbl.ov{color:#b33000}
 
+/* ── Date Picker ── */
+.dp-wrap{position:relative;display:inline-block;width:100%}
+.dp-trigger{display:flex;align-items:center;gap:6px;padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;background:#fff;min-height:34px;transition:border-color .15s;box-sizing:border-box;width:100%}
+.dp-trigger:hover{border-color:var(--accent)}
+.dp-trigger.dp-empty{color:var(--muted)}
+.dp-disp{flex:1;font-variant-numeric:tabular-nums}
+.dp-x{opacity:.45;font-size:16px;line-height:1;cursor:pointer;padding:0 2px}
+.dp-x:hover{opacity:1}
+.dp-cal{opacity:.35;font-size:12px;flex-shrink:0}
+.dp-pop{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:600;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:10px;box-shadow:0 4px 18px rgba(0,30,50,.13);min-width:190px}
+.dp-pop.dp-open{display:block}
+.dp-quick{display:flex;gap:4px;margin-top:6px}
+.dp-quick .btn{flex:1;padding:3px 2px;font-size:11px}
+.atrow .dp-wrap{flex:1;min-width:130px}
+
 /* ── Main ── */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#eef2f5}
 #empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:10px}
@@ -285,8 +300,44 @@ textarea.finput{resize:vertical;min-height:80px}
           <option>Email</option><option>Phone</option><option>Text</option><option>Other</option>
         </select>
       </div>
-      <div class="fg"><div class="flabel">Planned Date</div><input type="date" class="finput" id="nt-planned" /></div>
-      <div class="fg"><div class="flabel">Due Date</div><input type="date" class="finput" id="nt-due" /></div>
+      <div class="fg"><div class="flabel">Planned Date</div>
+        <div class="dp-wrap" id="dpw-nt-planned">
+          <input type="hidden" id="nt-planned" value="">
+          <div class="dp-trigger dp-empty" onclick="dpOpen('nt-planned')">
+            <span class="dp-disp" id="dp-d-nt-planned">None</span>
+            <span class="dp-x" id="dp-x-nt-planned" onclick="event.stopPropagation();dpSet('nt-planned','')" style="display:none" title="Clear date">×</span>
+            <span class="dp-cal">🗓</span>
+          </div>
+          <div class="dp-pop" id="dp-pop-nt-planned">
+            <input type="date" class="finput" style="width:100%;box-sizing:border-box" value="" onchange="dpSet('nt-planned',this.value)">
+            <div class="dp-quick">
+              <button class="btn btn-ghost btn-sm" onclick="dpBump('nt-planned',1)">+1d</button>
+              <button class="btn btn-ghost btn-sm" onclick="dpBump('nt-planned',7)">+1w</button>
+              <button class="btn btn-ghost btn-sm" onclick="dpBump('nt-planned',30)">+1m</button>
+              <button class="btn btn-ghost btn-sm" onclick="dpSet('nt-planned','')">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fg"><div class="flabel">Due Date</div>
+        <div class="dp-wrap" id="dpw-nt-due">
+          <input type="hidden" id="nt-due" value="">
+          <div class="dp-trigger dp-empty" onclick="dpOpen('nt-due')">
+            <span class="dp-disp" id="dp-d-nt-due">None</span>
+            <span class="dp-x" id="dp-x-nt-due" onclick="event.stopPropagation();dpSet('nt-due','')" style="display:none" title="Clear date">×</span>
+            <span class="dp-cal">🗓</span>
+          </div>
+          <div class="dp-pop" id="dp-pop-nt-due">
+            <input type="date" class="finput" style="width:100%;box-sizing:border-box" value="" onchange="dpSet('nt-due',this.value)">
+            <div class="dp-quick">
+              <button class="btn btn-ghost btn-sm" onclick="dpBump('nt-due',1)">+1d</button>
+              <button class="btn btn-ghost btn-sm" onclick="dpBump('nt-due',7)">+1w</button>
+              <button class="btn btn-ghost btn-sm" onclick="dpBump('nt-due',30)">+1m</button>
+              <button class="btn btn-ghost btn-sm" onclick="dpSet('nt-due','')">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="fg fw"><div class="flabel">Description</div><textarea class="finput" id="nt-desc" style="min-height:70px" placeholder="Optional description..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -826,11 +877,11 @@ function renderDetail() {
           </div>
           <div class="fg">
             <div class="flabel">Planned Date</div>
-            <input type="date" class="finput" value="${f[TF.planned]||''}" onchange="qc('${TF.planned}',this.value,'date')" />
+            ${renderDatePicker('dp-tkplan', f[TF.planned]||'', `qc('${TF.planned}',v,'date')`)}
           </div>
           <div class="fg">
             <div class="flabel">Due Date</div>
-            <input type="date" class="finput" value="${f[TF.due]||''}" onchange="qc('${TF.due}',this.value,'date')" />
+            ${renderDatePicker('dp-tkdue', f[TF.due]||'', `qc('${TF.due}',v,'date')`)}
           </div>
           <div class="fg" style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--border-light);margin-top:2px">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sidebar)">
@@ -859,7 +910,7 @@ function renderDetail() {
             </div>
             <div class="fg">
               <div class="flabel">End Date</div>
-              <input type="date" class="finput" value="${f[TF.recurringEnd]||''}" onchange="qc('${TF.recurringEnd}',this.value,'date')" />
+              ${renderDatePicker('dp-tkrecend', f[TF.recurringEnd]||'', `qc('${TF.recurringEnd}',v,'date')`)}
             </div>
           </div>
           <div class="fg fw">
@@ -920,8 +971,8 @@ function renderDetail() {
               <option>Waiting on Customer</option><option>Waiting on Others</option>
               <option>Waiting on Office</option><option>Not Started</option>
             </select>
-            <input type="date" class="finput" id="nt-tplan" placeholder="Plan" style="width:130px" title="Planned date" />
-            <input type="date" class="finput" id="nt-tdue" placeholder="Due" style="width:130px" title="Due date" />
+            ${renderDatePicker('nt-tplan', '')}
+            ${renderDatePicker('nt-tdue', '')}
           </div>
           <div class="atrow">
             <input type="text" class="finput" id="nt-tnotes" placeholder="Notes (optional)…" style="flex:1" />
@@ -1207,8 +1258,8 @@ async function addTask() {
     }
     updateTaskList();
     document.getElementById('nt-task').value = '';
-    document.getElementById('nt-tplan').value = '';
-    document.getElementById('nt-tdue').value = '';
+    dpSet('nt-tplan', '');
+    dpSet('nt-tdue', '');
     document.getElementById('nt-tnotes').value = '';
     document.getElementById('add-task-area').classList.remove('show');
     toast('Task added','ok');
@@ -1238,9 +1289,9 @@ function editTask(id) {
         </select>
       </div>
       <div class="fg"><div class="flabel">Planned Date</div>
-        <input type="date" class="finput" id="te-pl-${id}" value="${f[SF.planned]||''}" /></div>
+        ${renderDatePicker('te-pl-'+id, f[SF.planned]||'')}</div>
       <div class="fg"><div class="flabel">Due Date</div>
-        <input type="date" class="finput" id="te-du-${id}" value="${f[SF.due]||''}" /></div>
+        ${renderDatePicker('te-du-'+id, f[SF.due]||'')}</div>
     </div>
     <div class="fg" style="margin-bottom:8px"><div class="flabel">Notes</div>
       <textarea class="finput" id="te-nt-${id}" style="min-height:55px">${esc(f[SF.notes]||'')}</textarea></div>
@@ -1699,9 +1750,11 @@ async function createTicket() {
     allTickets.unshift(full);
     closeModal('nt-modal');
     // Reset form
-    ['nt-subject','nt-type','nt-priority','nt-channel','nt-planned','nt-due','nt-desc'].forEach(id => {
+    ['nt-subject','nt-type','nt-priority','nt-channel','nt-desc'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
+    dpSet('nt-planned', '');
+    dpSet('nt-due', '');
     document.getElementById('nt-company').value = '';
     document.getElementById('nt-contact').innerHTML = '<option value="">— Select company first —</option>';
     document.getElementById('nt-contact').disabled = true;
@@ -1735,6 +1788,72 @@ function showModal(id) {
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 // Close modals on bg click
 document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('show'); }));
+
+// ══════════════════════════════════════
+// DATE PICKER
+// ══════════════════════════════════════
+function renderDatePicker(inputId, value, cbExpr) {
+  const v = value || '';
+  const display = v ? fd(v) : 'None';
+  const cbAttr = cbExpr ? ` data-dp-cb="${cbExpr.replace(/"/g,'&quot;')}"` : '';
+  return `<div class="dp-wrap" id="dpw-${inputId}"${cbAttr}>
+    <input type="hidden" id="${inputId}" value="${v}">
+    <div class="dp-trigger${!v?' dp-empty':''}" onclick="dpOpen('${inputId}')">
+      <span class="dp-disp" id="dp-d-${inputId}">${display}</span>
+      <span class="dp-x" id="dp-x-${inputId}" onclick="event.stopPropagation();dpSet('${inputId}','')" style="${v?'':'display:none'}" title="Clear date">×</span>
+      <span class="dp-cal">🗓</span>
+    </div>
+    <div class="dp-pop" id="dp-pop-${inputId}">
+      <input type="date" class="finput" style="width:100%;box-sizing:border-box" value="${v}"
+        onchange="dpSet('${inputId}',this.value)">
+      <div class="dp-quick">
+        <button class="btn btn-ghost btn-sm" onclick="dpBump('${inputId}',1)">+1d</button>
+        <button class="btn btn-ghost btn-sm" onclick="dpBump('${inputId}',7)">+1w</button>
+        <button class="btn btn-ghost btn-sm" onclick="dpBump('${inputId}',30)">+1m</button>
+        <button class="btn btn-ghost btn-sm" onclick="dpSet('${inputId}','')">Clear</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function dpOpen(id) {
+  const pop = document.getElementById('dp-pop-'+id);
+  if (!pop) return;
+  const isOpen = pop.classList.contains('dp-open');
+  document.querySelectorAll('.dp-pop.dp-open').forEach(p => p.classList.remove('dp-open'));
+  if (!isOpen) pop.classList.add('dp-open');
+}
+
+function dpSet(id, val) {
+  const hidden = document.getElementById(id);
+  if (!hidden) return;
+  hidden.value = val || '';
+  const disp = document.getElementById('dp-d-'+id);
+  if (disp) disp.textContent = val ? fd(val) : 'None';
+  const trigger = document.getElementById('dpw-'+id)?.querySelector('.dp-trigger');
+  if (trigger) trigger.classList.toggle('dp-empty', !val);
+  const xBtn = document.getElementById('dp-x-'+id);
+  if (xBtn) xBtn.style.display = val ? '' : 'none';
+  const nativeInp = document.getElementById('dp-pop-'+id)?.querySelector('input[type=date]');
+  if (nativeInp) nativeInp.value = val || '';
+  const cbExpr = document.getElementById('dpw-'+id)?.dataset?.dpCb;
+  if (cbExpr) (new Function('v', cbExpr))(val || null);
+  document.getElementById('dp-pop-'+id)?.classList.remove('dp-open');
+}
+
+function dpBump(id, days) {
+  const hidden = document.getElementById(id);
+  if (!hidden) return;
+  const cur = hidden.value ? new Date(hidden.value + 'T00:00:00') : new Date();
+  cur.setDate(cur.getDate() + days);
+  dpSet(id, cur.toISOString().split('T')[0]);
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dp-wrap')) {
+    document.querySelectorAll('.dp-pop.dp-open').forEach(p => p.classList.remove('dp-open'));
+  }
+});
 
 // ══════════════════════════════════════
 // UTIL
