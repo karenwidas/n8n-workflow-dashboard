@@ -98,18 +98,19 @@
 
   /* ── Left Nav ── */
   #nav {
-    background: var(--navy);
+    background: #eef2f5;
     padding: 0;
     position: sticky;
     top: 52px;
     height: calc(100vh - 52px);
     overflow-y: auto;
-    box-shadow: 2px 0 12px rgba(0,48,79,.18);
+    box-shadow: 2px 0 12px rgba(0,48,79,.12);
+    border-right: 1px solid #c8d8e4;
   }
   #nav-header {
     padding: 16px 18px 14px;
     border-bottom: 3px solid var(--green);
-    background: #001f33;
+    background: var(--navy);
   }
   #nav-header h2 {
     color: #fff;
@@ -132,7 +133,7 @@
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: rgba(255,255,255,.3);
+    color: #6a8fa8;
     padding: 18px 18px 5px;
   }
   .nav-item {
@@ -143,20 +144,20 @@
     cursor: pointer;
     transition: background .12s;
     border-left: 3px solid transparent;
-    color: rgba(255,255,255,.65);
+    color: #2a5070;
     font-size: 13px;
     text-decoration: none;
   }
-  .nav-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.9); }
+  .nav-item:hover { background: rgba(0,48,79,.06); color: #001f33; }
   .nav-item.active {
-    background: rgba(255,255,255,.1);
+    background: #eef4e2;
     border-left-color: var(--green);
-    color: #fff;
+    color: #001f33;
     font-weight: 600;
   }
   .nav-divider {
     height: 1px;
-    background: rgba(255,255,255,.08);
+    background: #c8d8e4;
     margin: 8px 18px;
   }
   .nav-dot {
@@ -168,10 +169,10 @@
     margin-left: auto;
     font-size: 10px;
     font-weight: 700;
-    background: rgba(255,255,255,.13);
+    background: #dce8f0;
     border-radius: 10px;
     padding: 1px 7px;
-    color: rgba(255,255,255,.75);
+    color: #2a5070;
   }
   .nav-count.has-items { background: var(--green); color: #fff; }
   .nav-count.overdue-count { background: var(--red); color: #fff; }
