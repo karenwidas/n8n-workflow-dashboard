@@ -267,7 +267,7 @@
   .tkt-main { flex: 1; min-width: 0; }
   .tkt-subject {
     font-size: 14px;
-    font-weight: bold;
+    font-weight: normal;
     color: var(--text);
     white-space: nowrap;
     overflow: hidden;
@@ -1142,9 +1142,8 @@ function buildTicketCard(ticket, cssClass) {
     <div class="tkt-header" onclick="toggleCard('${id}')">
       <span class="tkt-toggle">▶</span>
       <div class="tkt-main">
-        <div class="tkt-subject" title="${esc(subject)}">${esc(subject)}</div>
+        <div class="tkt-subject" title="${coName ? esc(coName)+' | '+esc(subject) : esc(subject)}">${coName ? `${esc(coName)} <span style="color:var(--border);font-weight:300">|</span> ` : ''}${esc(subject)}</div>
         <div class="tkt-meta">
-          ${coName ? `<span class="tkt-company">${esc(coName)}</span>` : ''}
           ${ticketNum ? `<span class="pill pill-pri-normal">${ticketNum}</span>` : ''}
           ${priPill}${typePill}${recBadge}
         </div>
