@@ -1437,8 +1437,8 @@ async function closeTicket() {
     sv(f[TF.recurringFrequency]) &&
     (!recurringEnd || recurringEnd >= today);
 
+  const closedAt = new Date().toISOString();
   try {
-    const closedAt = new Date().toISOString();
     const updated = await atPatch(T_TKT, currentTicket.id, {
       [TF.status]: 'Closed',
       [TF.closed]: closedAt,
@@ -1451,40 +1451,48 @@ async function closeTicket() {
     renderDetail();
     initDetailContacts();
     toast('Ticket closed','ok');
+  } catch(e) { toast(e.message,'err'); return; }
 
-    if (shouldRecur) {
-      // Fire webhook to create next recurring ticket
-      const payload = {
-        ticket_id: currentTicket.id,
-        subject: f[TF.subject],
-        company: f[TF.company] ? [f[TF.company][0]] : [],
-        contact: f[TF.contact] ? [f[TF.contact][0]] : [],
-        type: sv(f[TF.type]),
-        priority: sv(f[TF.priority]),
-        channel: sv(f[TF.channel]),
-        desc: f[TF.desc] || '',
-        next_task: f[TF.nextTask] || '',
-        due_date: f[TF.due] || '',
-        planned_date: f[TF.planned] || '',
-        recurring_interval: f[TF.recurringInterval],
-        recurring_frequency: sv(f[TF.recurringFrequency]),
-        recurring_schedule: sv(f[TF.recurringSchedule]),
-        recurring_end: f[TF.recurringEnd] || '',
-        closed_at: closedAt,
-        task_ids: (f[TF.tasks] || []).map(l => linkId(l)).filter(Boolean),
-      };
-      try {
-        await fetch('https://karenwidas.app.n8n.cloud/webhook/create-recurring-ticket', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+  if (shouldRecur) {
+    // Fire webhook to create next recurring ticket
+    const payload = {
+      ticket_id: currentTicket.id,
+      subject: f[TF.subject],
+      company: f[TF.company] ? [f[TF.company][0]] : [],
+      contact: f[TF.contact] ? [f[TF.contact][0]] : [],
+      type: sv(f[TF.type]),
+      priority: sv(f[TF.priority]),
+      channel: sv(f[TF.channel]),
+      desc: f[TF.desc] || '',
+      next_task: f[TF.nextTask] || '',
+      due_date: f[TF.due] || '',
+      planned_date: f[TF.planned] || '',
+      recurring_interval: f[TF.recurringInterval],
+      recurring_frequency: sv(f[TF.recurringFrequency]),
+      recurring_schedule: sv(f[TF.recurringSchedule]),
+      recurring_end: f[TF.recurringEnd] || '',
+      closed_at: closedAt,
+      task_ids: (f[TF.tasks] || []).map(l => linkId(l)).filter(Boolean),
+    };
+    console.log('[recurring] payload →', JSON.stringify(payload, null, 2));
+    try {
+      const resp = await fetch('https://karenwidas.app.n8n.cloud/webhook/create-recurring-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) {
+        const body = await resp.text().catch(() => '');
+        toast(`Recurring webhook error ${resp.status}: ${body || 'no response body'}`, 'err');
+        console.error('[recurring] n8n error', resp.status, body);
+      } else {
         toast('Next recurring ticket queued ✓', 'ok');
-      } catch(e) {
-        toast('Recurring webhook failed: ' + e.message, 'err');
       }
+    } catch(e) {
+      toast('Recurring webhook failed: ' + e.message, 'err');
+      console.error('[recurring] fetch error', e);
     }
-  } catch(e) { toast(e.message,'err'); }
+  }
 }
 
 async function reopenTicket() {
