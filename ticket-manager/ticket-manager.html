@@ -1432,11 +1432,11 @@ async function closeTicket() {
   const today = new Date().toISOString().split('T')[0];
 
   // Check if recurring and not past end date
+  const interval = f[TF.recurringInterval] ?? 1;
   const shouldRecur = isRecurring &&
-    f[TF.recurringInterval] &&
     sv(f[TF.recurringFrequency]) &&
     (!recurringEnd || recurringEnd >= today);
-  console.log('[recurring] check →', { isRecurring, interval: f[TF.recurringInterval], freq: sv(f[TF.recurringFrequency]), recurringEnd, today, shouldRecur });
+  console.log('[recurring] check →', { isRecurring, interval, freq: sv(f[TF.recurringFrequency]), recurringEnd, today, shouldRecur });
 
   const closedAt = new Date().toISOString();
   try {
@@ -1468,7 +1468,7 @@ async function closeTicket() {
       next_task: f[TF.nextTask] || '',
       due_date: f[TF.due] || '',
       planned_date: f[TF.planned] || '',
-      recurring_interval: f[TF.recurringInterval],
+      recurring_interval: interval,
       recurring_frequency: sv(f[TF.recurringFrequency]),
       recurring_schedule: sv(f[TF.recurringSchedule]),
       recurring_end: f[TF.recurringEnd] || '',
