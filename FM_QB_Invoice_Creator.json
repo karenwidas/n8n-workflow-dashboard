@@ -1,0 +1,319 @@
+{
+  "name": "FM QB Invoice Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+        },
+        "options": { "timezone": "America/Chicago" }
+      },
+      "id": "n1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "qbRealmId",  "value": "REPLACE_WITH_QB_SANDBOX_REALM_ID", "type": "string" },
+            { "id": "a2", "name": "dataRate",    "value": 9.50,                               "type": "number" },
+            { "id": "a3", "name": "airtableBase","value": "apppYzklXP1tsbWnF",                "type": "string" },
+            { "id": "a4", "name": "qbItemName",  "value": "AT&T Monthly Data Plan",           "type": "string" },
+            { "id": "a5", "name": "qbBaseUrl",   "value": "https://sandbox-quickbooks.api.intuit.com/v3/company", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n2",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "AND(IS_SAME({Market Start Date}, TODAY(), 'day'), NOT({Year Round}), NOT({QB Invoice Created}))"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "HTTP: Get FM Seasons",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const records = $input.first().json.records || [];\n\nif (!records.length) return [];\n\nfunction fmtMonthYear(dateStr) {\n  if (!dateStr) return '';\n  const d = new Date(dateStr);\n  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });\n}\n\nreturn records.map(r => {\n  const seasonName  = r.fields['Season Name'] || '';\n  const companyName = seasonName.replace(/\\s*[\\u2013\\u2014-]\\s*\\d{4}$/, '').trim();\n  const companyId   = (r.fields['Company'] || [])[0] || '';\n\n  const billFromRaw   = r.fields['Bill From']      || r.fields['Market Start Date'] || '';\n  const billThruRaw   = r.fields['Bill Through']   || r.fields['Market End Date']   || '';\n  const billingMonths = r.fields['Billing Months'] || 0;\n\n  return {\n    json: {\n      seasonId:      r.id,\n      seasonName,\n      companyId,\n      companyName,\n      startDate:     r.fields['Market Start Date'] || '',\n      endDate:       r.fields['Market End Date']   || '',\n      billFrom:      fmtMonthYear(billFromRaw),\n      billThrough:   fmtMonthYear(billThruRaw),\n      billingMonths\n    }\n  };\n});\n"
+      },
+      "id": "n4",
+      "name": "Code: Prep Season Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblvVqQhGPQCcSCuT",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ 'AND(FIND(\"' + $json.companyName + '\", ARRAYJOIN({Company})), {Comm Type}=\"Wireless/AT&T 4G\")' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n5",
+      "name": "HTTP: Get Equipment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx      = $('Code: Prep Season Items').item.json;\nconst records  = $input.first().json.records || [];\nconst rate     = $('Set Config').first().json.dataRate;\n\nconst terminals = records.filter(r => {\n  const model = (r.fields['Terminal Model'] || '').toUpperCase();\n  return !model.includes('SIM');\n});\n\nconst terminalCount = terminals.length;\nif (!terminalCount) throw new Error('No terminals found for ' + ctx.companyName);\n\nconst qty    = ctx.billingMonths * terminalCount;\nconst amount = parseFloat((qty * rate).toFixed(2));\n\nreturn [{\n  json: {\n    ...ctx,\n    terminalCount,\n    qty,\n    amount,\n    rate\n  }\n}];\n"
+      },
+      "id": "n6",
+      "name": "Code: Count Terminals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Set Config').first().json.qbBaseUrl + '/' + $('Set Config').first().json.qbRealmId + '/query' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "query",        "value": "SELECT * FROM Customer" },
+            { "name": "minorversion", "value": "65" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept",       "value": "application/json" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "quickBooksOAuth2Api",
+        "options": {}
+      },
+      "id": "n7",
+      "name": "HTTP: QB Query Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1560, 300],
+      "credentials": {
+        "quickBooksOAuth2Api": { "id": "REPLACE_WITH_QB_OAUTH_CREDENTIAL_ID", "name": "QuickBooks OAuth2" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx          = $('Code: Count Terminals').item.json;\nconst allCustomers = $input.first().json.QueryResponse?.Customer || [];\n\n// Filter in JS — QB WHERE clause can have quote encoding issues\nconst match = allCustomers.find(c =>\n  (c.DisplayName || '').toLowerCase() === ctx.companyName.toLowerCase()\n);\n\nif (!match) {\n  throw new Error('QB Customer not found: ' + ctx.companyName +\n    '. Found: ' + allCustomers.map(c => c.DisplayName).join(', '));\n}\n\nreturn [{\n  json: {\n    ...ctx,\n    qbCustomerId:          match.Id,\n    qbCustomerDisplayName: match.DisplayName,\n    qbCustomerEmail:       match.PrimaryEmailAddr?.Address || ''\n  }\n}];\n"
+      },
+      "id": "n8",
+      "name": "Code: Extract QB Customer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Set Config').first().json.qbBaseUrl + '/' + $('Set Config').first().json.qbRealmId + '/query' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "query",        "value": "SELECT * FROM Item" },
+            { "name": "minorversion", "value": "65" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept",       "value": "application/json" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "quickBooksOAuth2Api",
+        "options": {}
+      },
+      "id": "n9",
+      "name": "HTTP: QB Query Item",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2000, 300],
+      "credentials": {
+        "quickBooksOAuth2Api": { "id": "REPLACE_WITH_QB_OAUTH_CREDENTIAL_ID", "name": "QuickBooks OAuth2" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx   = $('Code: Extract QB Customer').item.json;\nconst allItems = $input.first().json.QueryResponse?.Item || [];\nconst itemName = $('Set Config').first().json.qbItemName;\n\nconst match = allItems.find(i =>\n  (i.Name || '').toLowerCase() === itemName.toLowerCase()\n);\n\nif (!match) {\n  throw new Error('QB Item not found: ' + itemName +\n    '. Found: ' + allItems.map(i => i.Name).join(', '));\n}\n\nconst itemId = match.Id;\n\nconst description = 'AT&T Monthly Data Plan via Dejavoo - ' +\n  ctx.billFrom + ' through ' + ctx.billThrough + ' - ' +\n  ctx.billingMonths + ' mos x ' + ctx.terminalCount + ' terminal' +\n  (ctx.terminalCount > 1 ? 's' : '');\n\nconst invoiceBody = {\n  CustomerRef: { value: ctx.qbCustomerId },\n  TxnDate: ctx.startDate,\n  Line: [{\n    Amount: ctx.amount,\n    DetailType: 'SalesItemLineDetail',\n    Description: description,\n    SalesItemLineDetail: {\n      ItemRef:   { value: itemId },\n      Qty:       ctx.qty,\n      UnitPrice: ctx.rate\n    }\n  }]\n};\n\nreturn [{\n  json: {\n    ...ctx,\n    qbItemId:    itemId,\n    description,\n    invoiceBody: JSON.stringify(invoiceBody)\n  }\n}];\n"
+      },
+      "id": "n10",
+      "name": "Code: Build QB Invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Set Config').first().json.qbBaseUrl + '/' + $('Set Config').first().json.qbRealmId + '/invoice' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "minorversion", "value": "65" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept",       "value": "application/json" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.invoiceBody }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "quickBooksOAuth2Api",
+        "options": {}
+      },
+      "id": "n11",
+      "name": "HTTP: QB Create Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2440, 300],
+      "credentials": {
+        "quickBooksOAuth2Api": { "id": "REPLACE_WITH_QB_OAUTH_CREDENTIAL_ID", "name": "QuickBooks OAuth2" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx     = $('Code: Build QB Invoice').item.json;\nconst invoice = $input.first().json.Invoice;\n\nif (!invoice) {\n  throw new Error('QB invoice creation failed — no Invoice in response.');\n}\n\nreturn [{\n  json: {\n    ...ctx,\n    qbInvoiceId:     invoice.Id,\n    qbInvoiceNumber: invoice.DocNumber\n  }\n}];\n"
+      },
+      "id": "n12",
+      "name": "Code: Extract Invoice Number",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Set Config').first().json.qbBaseUrl + '/' + $('Set Config').first().json.qbRealmId + '/invoice/' + $json.qbInvoiceId + '/send' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "sendTo",       "value": "={{ $json.qbCustomerEmail }}" },
+            { "name": "minorversion", "value": "65" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/octet-stream" }
+          ]
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "quickBooksOAuth2Api",
+        "options": {}
+      },
+      "id": "n13",
+      "name": "HTTP: QB Send Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2880, 300],
+      "credentials": {
+        "quickBooksOAuth2Api": { "id": "REPLACE_WITH_QB_OAUTH_CREDENTIAL_ID", "name": "QuickBooks OAuth2" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx/' + $('Code: Extract Invoice Number').item.json.seasonId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { fldulQr5VhrDH92qh: $('Code: Extract Invoice Number').item.json.qbInvoiceNumber, fldd3bggVDTLEe5eQ: true } }) }}",
+        "options": {}
+      },
+      "id": "n14",
+      "name": "HTTP: Patch Airtable Season",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [3100, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "kwidas@me.com",
+        "subject": "={{ 'QB Invoice Created & Sent - ' + $('Code: Extract Invoice Number').item.json.seasonName }}",
+        "emailType": "html",
+        "message": "=<p>QuickBooks invoice created and sent to customer.</p><table style=\"border-collapse:collapse;font-family:sans-serif;font-size:14px\"><tr><td style=\"padding:4px 12px 4px 0\"><strong>Season</strong></td><td>{{ $('Code: Extract Invoice Number').item.json.seasonName }}</td></tr><tr><td style=\"padding:4px 12px 4px 0\"><strong>Customer</strong></td><td>{{ $('Code: Extract Invoice Number').item.json.qbCustomerDisplayName }}</td></tr><tr><td style=\"padding:4px 12px 4px 0\"><strong>Sent to</strong></td><td>{{ $('Code: Extract Invoice Number').item.json.qbCustomerEmail }}</td></tr><tr><td style=\"padding:4px 12px 4px 0\"><strong>Invoice #</strong></td><td>{{ $('Code: Extract Invoice Number').item.json.qbInvoiceNumber }}</td></tr><tr><td style=\"padding:4px 12px 4px 0\"><strong>Description</strong></td><td>{{ $('Code: Extract Invoice Number').item.json.description }}</td></tr><tr><td style=\"padding:4px 12px 4px 0\"><strong>Amount</strong></td><td>${{ $('Code: Extract Invoice Number').item.json.amount }}</td></tr></table>",
+        "options": {}
+      },
+      "id": "n15",
+      "name": "Gmail: Notify Pooks",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [3320, 300],
+      "credentials": {
+        "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail OAuth2 API" }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger":             { "main": [[{ "node": "Set Config",                  "type": "main", "index": 0 }]] },
+    "Set Config":                   { "main": [[{ "node": "HTTP: Get FM Seasons",         "type": "main", "index": 0 }]] },
+    "HTTP: Get FM Seasons":         { "main": [[{ "node": "Code: Prep Season Items",      "type": "main", "index": 0 }]] },
+    "Code: Prep Season Items":      { "main": [[{ "node": "HTTP: Get Equipment",          "type": "main", "index": 0 }]] },
+    "HTTP: Get Equipment":          { "main": [[{ "node": "Code: Count Terminals",        "type": "main", "index": 0 }]] },
+    "Code: Count Terminals":        { "main": [[{ "node": "HTTP: QB Query Customer",      "type": "main", "index": 0 }]] },
+    "HTTP: QB Query Customer":      { "main": [[{ "node": "Code: Extract QB Customer",    "type": "main", "index": 0 }]] },
+    "Code: Extract QB Customer":    { "main": [[{ "node": "HTTP: QB Query Item",          "type": "main", "index": 0 }]] },
+    "HTTP: QB Query Item":          { "main": [[{ "node": "Code: Build QB Invoice",       "type": "main", "index": 0 }]] },
+    "Code: Build QB Invoice":       { "main": [[{ "node": "HTTP: QB Create Invoice",      "type": "main", "index": 0 }]] },
+    "HTTP: QB Create Invoice":      { "main": [[{ "node": "Code: Extract Invoice Number", "type": "main", "index": 0 }]] },
+    "Code: Extract Invoice Number": { "main": [[{ "node": "HTTP: QB Send Invoice",        "type": "main", "index": 0 }]] },
+    "HTTP: QB Send Invoice":        { "main": [[{ "node": "HTTP: Patch Airtable Season",  "type": "main", "index": 0 }]] },
+    "HTTP: Patch Airtable Season":  { "main": [[{ "node": "Gmail: Notify Pooks",          "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

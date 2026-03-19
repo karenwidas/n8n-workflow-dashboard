@@ -1,0 +1,178 @@
+{
+  "name": "FM Close Account Request",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "FM Close Account Request",
+        "formDescription": "Send a close account request to the office for a seasonal market.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Market Name",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Downtown Green Bay" },
+                  { "option": "City of Manitowoc" },
+                  { "option": "On Broadway" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Notes",
+              "fieldType": "textarea",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "responseText": "Close account request sent to the office.",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "Form: Close Account Request",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "fm-close-account"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ 'AND({Season Year}=' + new Date().getFullYear() + ', NOT({Year Round}))' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n2",
+      "name": "HTTP: Get FM Seasons",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const records    = $input.first().json.records || [];\nconst formData   = $('Form: Close Account Request').first().json;\nconst marketName = (formData['Market Name'] || '').toLowerCase();\nconst notes      = formData['Notes'] || '';\n\nconst match = records.find(r =>\n  (r.fields['Season Name'] || '').toLowerCase().includes(marketName)\n);\n\nif (!match) throw new Error('No FM Season found for ' + formData['Market Name']);\n\nconst ticketIds = match.fields['Tickets'] || [];\nif (!ticketIds.length) throw new Error('No ticket linked to FM Season for ' + formData['Market Name']);\n\nreturn [{\n  json: {\n    seasonId:   match.id,\n    seasonName: match.fields['Season Name'],\n    ticketId:   ticketIds[0],\n    marketName: formData['Market Name'],\n    notes\n  }\n}];\n"
+      },
+      "id": "n3",
+      "name": "Code: Find FM Season",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tbl40uFmR8J8rM75z",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={Task}=\"[POST-SEASON] Send Close request to office (email)\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n4",
+      "name": "HTTP: Find Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const records = $input.first().json.records || [];\nconst ctx     = $('Code: Find FM Season').first().json;\n\n// Match by ticket ID in the Tickets linked field (field name, not field ID)\nconst match = records.find(r => {\n  const tickets = r.fields['Tickets'] || [];\n  return tickets.includes(ctx.ticketId);\n});\n\nif (!match) throw new Error('Close Account task not found for ' + ctx.marketName + '. Check ticket is linked to FM Season.');\n\nreturn [{\n  json: {\n    taskId:     match.id,\n    ticketId:   ctx.ticketId,\n    seasonId:   ctx.seasonId,\n    seasonName: ctx.seasonName,\n    marketName: ctx.marketName,\n    notes:      ctx.notes\n  }\n}];\n"
+      },
+      "id": "n5",
+      "name": "Code: Extract Task",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://api.airtable.com/v0/apppYzklXP1tsbWnF/tbl40uFmR8J8rM75z/' + $json.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { fldfTkbMH4xh9AfEb: 'In Progress' } }) }}",
+        "options": {}
+      },
+      "id": "n6",
+      "name": "HTTP: Update Task Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1340, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID", "name": "Airtable Header Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "kwidas@me.com",
+        "subject": "={{ 'Close Account Request - ' + $('Code: Extract Task').first().json.marketName }}",
+        "emailType": "html",
+        "message": "=<p>Please close the account for the following seasonal market:</p><p><strong>{{ $('Code: Extract Task').first().json.seasonName }}</strong></p>{{ $('Code: Extract Task').first().json.notes ? '<p><strong>Notes:</strong> ' + $('Code: Extract Task').first().json.notes + '</p>' : '' }}<p>Please reply to confirm when the account has been closed.</p><p>Thank you</p>",
+        "options": {}
+      },
+      "id": "n7",
+      "name": "Gmail: Send to Office",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1560, 300],
+      "credentials": {
+        "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail OAuth2 API" }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "kwidas@me.com",
+        "subject": "={{ 'Close Account Request Sent - ' + $('Code: Extract Task').first().json.marketName }}",
+        "emailType": "text",
+        "message": "={{ 'Close account request sent to office for ' + $('Code: Extract Task').first().json.seasonName + '. Task status updated to In Progress.' }}",
+        "options": {}
+      },
+      "id": "n8",
+      "name": "Gmail: Notify Pooks",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1780, 300],
+      "credentials": {
+        "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail OAuth2 API" }
+      }
+    }
+  ],
+  "connections": {
+    "Form: Close Account Request": { "main": [[{ "node": "HTTP: Get FM Seasons",     "type": "main", "index": 0 }]] },
+    "HTTP: Get FM Seasons":        { "main": [[{ "node": "Code: Find FM Season",     "type": "main", "index": 0 }]] },
+    "Code: Find FM Season":        { "main": [[{ "node": "HTTP: Find Task",          "type": "main", "index": 0 }]] },
+    "HTTP: Find Task":             { "main": [[{ "node": "Code: Extract Task",       "type": "main", "index": 0 }]] },
+    "Code: Extract Task":          { "main": [[{ "node": "HTTP: Update Task Status", "type": "main", "index": 0 }]] },
+    "HTTP: Update Task Status":    { "main": [[{ "node": "Gmail: Send to Office",    "type": "main", "index": 0 }]] },
+    "Gmail: Send to Office":       { "main": [[{ "node": "Gmail: Notify Pooks",      "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

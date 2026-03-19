@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Email Preview: Remove Hold Request</title>
+</head>
+<body style="font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #333; max-width: 600px; margin: 40px auto; padding: 0 20px;">
+
+  <p>Please remove the seasonal hold on the following account:</p>
+  <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+    <tr>
+      <td style="padding: 10px 14px; background-color: #f5f5f5; border: 1px solid #ddd; font-weight: bold; width: 140px;">Account</td>
+      <td style="padding: 10px 14px; border: 1px solid #ddd;">{{ $('Code: Extract Task').first().json.seasonName }}</td>
+    </tr>
+  </table>
+  {{ $('Code: Extract Task').first().json.notes ? '<p><strong>Notes:</strong> ' + $('Code: Extract Task').first().json.notes + '</p>' : '' }}
+  <p>Please reply to confirm when the hold has been removed.</p>
+  <br>
+
+  <div>
+    <font face="Helvetica">All the best,</font>
+  </div>
+  <div><font face="Helvetica"><span style="font-size: 14px;"><br /></span></font></div>
+
+  <div style="font-family: Helvetica, Arial; margin: 0px;">
+    <div style="font-family: Helvetica; font-size: 12px;">
+      <font color="#143445" face="Verdana" style="font-size: 14px;"><b>Karen Widas</b></font>
+    </div>
+    <div style="font-family: Helvetica; font-size: 12px;">
+      <font color="#658C1E" face="Verdana" size="2">CoCard Account Executive | T. <a href="tel:919.720.3104" style="color: currentcolor; text-decoration-color: rgba(152, 210, 45, 0.38);">919.720.3104</a></font>
+    </div>
+  </div>
+  <div style="font-family: Helvetica, Arial; margin: 0px;">
+    <span style="font-family: Helvetica; font-size: 12px;"><br /></span>
+  </div>
+  <div style="font-family: Helvetica, Arial; margin: 0px;">
+    <img src="data:application/octet-stream;base64,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" alt="image003.jpg" style="font-family: Helvetica; font-size: 12px; opacity: 1;" />
+  </div>
+
+</body>
+</html>

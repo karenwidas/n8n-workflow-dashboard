@@ -1,0 +1,144 @@
+{
+  "name": "FM Season Date Submission Form",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Farmers Market Season Dates",
+        "formDescription": "Please submit your market's season start and end dates.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Market Name",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Downtown Green Bay" },
+                  { "option": "City of Manitowoc" },
+                  { "option": "On Broadway" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Season Start Date",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Season End Date",
+              "fieldType": "date",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "responseText": "Thank you! We've received your season dates and will be in touch soon.",
+        "options": {}
+      },
+      "id": "node-form-trigger",
+      "name": "Form: Season Date Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "fm-season-dates"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ `AND({Season Year}=${new Date().getFullYear()}, NOT({Year Round}))` }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-http-get",
+      "name": "HTTP: Get FM Seasons",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID",
+          "name": "Airtable Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pure data transform — no HTTP calls\nconst formData   = $('Form: Season Date Submission').first().json;\nconst marketName = (formData['Market Name'] || '').trim().toLowerCase();\nconst records    = $input.first().json.records || [];\n\nconst match = records.find(r =>\n  (r.fields['Season Name'] || '').toLowerCase().includes(marketName)\n);\n\nif (!match) {\n  const available = records.map(r => r.fields['Season Name']).join(', ');\n  throw new Error(`No season found for \"${formData['Market Name']}\". Available: ${available}`);\n}\n\nreturn [{\n  json: {\n    recordId:   match.id,\n    seasonName: match.fields['Season Name'],\n    marketName: formData['Market Name'],\n    startDate:  formData['Season Start Date'],\n    endDate:    formData['Season End Date']\n  }\n}];\n"
+      },
+      "id": "node-code-find",
+      "name": "Code: Find Matching Season",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ `https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblbfy2peOy17gYvx/${$json.recordId}` }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { fldepLqOvu4IyT7UH: $json.startDate, fldSqjWpIc6m4rogG: $json.endDate } }) }}",
+        "options": {}
+      },
+      "id": "node-http-patch",
+      "name": "HTTP: Update FM Season",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [960, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_AIRTABLE_CREDENTIAL_ID",
+          "name": "Airtable Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "kwidas@me.com",
+        "subject": "=FM Season Dates Received – {{ $('Code: Find Matching Season').first().json.marketName }}",
+        "emailType": "text",
+        "message": "=Season dates received for {{ $('Code: Find Matching Season').first().json.marketName }}:\n\nSeason: {{ $('Code: Find Matching Season').first().json.seasonName }}\nStart: {{ $('Code: Find Matching Season').first().json.startDate }}\nEnd: {{ $('Code: Find Matching Season').first().json.endDate }}\n\nAirtable record: {{ $('Code: Find Matching Season').first().json.recordId }}",
+        "options": {}
+      },
+      "id": "node-gmail-notify",
+      "name": "Gmail: Notify Pooks",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1200, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Form: Season Date Submission": {
+      "main": [[{ "node": "HTTP: Get FM Seasons", "type": "main", "index": 0 }]]
+    },
+    "HTTP: Get FM Seasons": {
+      "main": [[{ "node": "Code: Find Matching Season", "type": "main", "index": 0 }]]
+    },
+    "Code: Find Matching Season": {
+      "main": [[{ "node": "HTTP: Update FM Season", "type": "main", "index": 0 }]]
+    },
+    "HTTP: Update FM Season": {
+      "main": [[{ "node": "Gmail: Notify Pooks", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
