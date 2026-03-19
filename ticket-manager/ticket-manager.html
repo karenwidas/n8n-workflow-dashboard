@@ -1436,6 +1436,7 @@ async function closeTicket() {
     f[TF.recurringInterval] &&
     sv(f[TF.recurringFrequency]) &&
     (!recurringEnd || recurringEnd >= today);
+  console.log('[recurring] check →', { isRecurring, interval: f[TF.recurringInterval], freq: sv(f[TF.recurringFrequency]), recurringEnd, today, shouldRecur });
 
   const closedAt = new Date().toISOString();
   try {
