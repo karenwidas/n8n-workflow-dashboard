@@ -978,8 +978,10 @@ function renderDetail() {
               <option>Waiting on Customer</option><option>Waiting on Others</option>
               <option>Waiting on Office</option><option>Not Started</option>
             </select>
-            ${renderDatePicker('nt-tplan', '')}
-            ${renderDatePicker('nt-tdue', '')}
+          </div>
+          <div class="atrow" style="flex-wrap:nowrap">
+            <div class="fg" style="flex:1;min-width:0;margin:0"><div class="flabel">Planned Date</div>${renderDatePicker('nt-tplan', '')}</div>
+            <div class="fg" style="flex:1;min-width:0;margin:0"><div class="flabel">Due Date</div>${renderDatePicker('nt-tdue', '')}</div>
           </div>
           <div class="atrow">
             <input type="text" class="finput" id="nt-tnotes" placeholder="Notes (optional)…" style="flex:1" />
