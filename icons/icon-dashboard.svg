@@ -1,11 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#00304F"/>
-  <!-- top-left: accent tile -->
-  <rect x="72" y="72" width="164" height="164" rx="20" fill="#69932F"/>
-  <!-- top-right: dim tile -->
-  <rect x="276" y="72" width="164" height="164" rx="20" fill="white" opacity="0.25"/>
-  <!-- bottom-left: dim tile -->
-  <rect x="72" y="276" width="164" height="164" rx="20" fill="white" opacity="0.25"/>
-  <!-- bottom-right: dim tile -->
-  <rect x="276" y="276" width="164" height="164" rx="20" fill="white" opacity="0.15"/>
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#00304F"/>
+
+  <!-- Top-left: large green panel with bar chart -->
+  <rect x="58" y="58" width="240" height="200" rx="18" fill="#69932F"/>
+  <!-- Bar chart inside green panel -->
+  <rect x="84" y="200" width="30" height="38" rx="5" fill="rgba(255,255,255,0.45)"/>
+  <rect x="126" y="176" width="30" height="62" rx="5" fill="rgba(255,255,255,0.6)"/>
+  <rect x="168" y="158" width="30" height="80" rx="5" fill="rgba(255,255,255,0.75)"/>
+  <rect x="210" y="140" width="30" height="98" rx="5" fill="white"/>
+  <!-- Trend line label -->
+  <rect x="84" y="80" width="90" height="11" rx="4" fill="rgba(255,255,255,0.65)"/>
+  <rect x="84" y="100" width="60" height="8" rx="3" fill="rgba(255,255,255,0.35)"/>
+
+  <!-- Top-right: stat card -->
+  <rect x="318" y="58" width="136" height="96" rx="18" fill="rgba(255,255,255,0.13)"/>
+  <rect x="318" y="58" width="5" height="96" rx="3" fill="#69932F"/>
+  <rect x="338" y="80" width="60" height="9" rx="3" fill="rgba(255,255,255,0.45)"/>
+  <rect x="338" y="98" width="88" height="22" rx="5" fill="rgba(255,255,255,0.18)"/>
+  <rect x="338" y="128" width="50" height="8" rx="3" fill="rgba(255,255,255,0.28)"/>
+
+  <!-- Mid-right: stat card -->
+  <rect x="318" y="174" width="136" height="84" rx="18" fill="rgba(255,255,255,0.13)"/>
+  <rect x="318" y="174" width="5" height="84" rx="3" fill="#69932F"/>
+  <rect x="338" y="194" width="60" height="9" rx="3" fill="rgba(255,255,255,0.45)"/>
+  <rect x="338" y="212" width="88" height="22" rx="5" fill="rgba(255,255,255,0.18)"/>
+
+  <!-- Bottom: wide panel with trend line -->
+  <rect x="58" y="278" width="396" height="176" rx="18" fill="rgba(255,255,255,0.1)"/>
+  <rect x="58" y="278" width="5" height="176" rx="3" fill="#69932F"/>
+  <rect x="82" y="298" width="80" height="9" rx="3" fill="rgba(255,255,255,0.35)"/>
+  <!-- Trend line -->
+  <polyline points="82,408 140,375 198,390 254,352 312,365 368,335 420,342 450,318"
+            fill="none" stroke="#69932F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <!-- Highlighted point -->
+  <circle cx="312" cy="365" r="9" fill="white"/>
+  <circle cx="450" cy="318" r="10" fill="#69932F" stroke="white" stroke-width="4"/>
 </svg>

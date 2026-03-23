@@ -1,13 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#00304F"/>
-  <!-- three rows = ticket list -->
-  <rect x="72" y="128" width="368" height="68" rx="14" fill="white" opacity="0.9"/>
-  <!-- checkbox dot on row 1 -->
-  <circle cx="112" cy="162" r="18" fill="#69932F"/>
-  <!-- row 2: accent -->
-  <rect x="72" y="222" width="368" height="68" rx="14" fill="#69932F"/>
-  <circle cx="112" cy="256" r="18" fill="white"/>
-  <!-- row 3: dim -->
-  <rect x="72" y="316" width="368" height="68" rx="14" fill="white" opacity="0.25"/>
-  <circle cx="112" cy="350" r="18" fill="white" opacity="0.5"/>
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#00304F"/>
+
+  <!-- Ticket card body -->
+  <rect x="68" y="112" width="376" height="288" rx="22" fill="rgba(255,255,255,0.93)"/>
+
+  <!-- Perforation line (dashed vertical) -->
+  <line x1="196" y1="112" x2="196" y2="400" stroke="#00304F" stroke-width="4" stroke-dasharray="12 9" opacity="0.25"/>
+
+  <!-- Left stub: green status circle with checkmark -->
+  <circle cx="132" cy="256" r="38" fill="#69932F"/>
+  <path d="M114 256 L127 269 L154 242" fill="none" stroke="white" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Right area: ticket content -->
+  <!-- Subject line -->
+  <rect x="222" y="152" width="186" height="15" rx="5" fill="#00304F" opacity="0.65"/>
+  <!-- Subline -->
+  <rect x="222" y="178" width="140" height="10" rx="4" fill="#69932F" opacity="0.7"/>
+  <!-- Body lines -->
+  <rect x="222" y="212" width="174" height="9" rx="3" fill="#00304F" opacity="0.2"/>
+  <rect x="222" y="232" width="152" height="9" rx="3" fill="#00304F" opacity="0.2"/>
+  <rect x="222" y="252" width="164" height="9" rx="3" fill="#00304F" opacity="0.2"/>
+  <!-- Status badges -->
+  <rect x="222" y="296" width="80" height="26" rx="8" fill="#69932F" opacity="0.9"/>
+  <rect x="312" y="296" width="64" height="26" rx="8" fill="#00304F" opacity="0.15"/>
+  <!-- Due date line -->
+  <rect x="222" y="346" width="100" height="9" rx="3" fill="#00304F" opacity="0.18"/>
+  <rect x="332" y="346" width="68" height="9" rx="3" fill="#69932F" opacity="0.5"/>
 </svg>
