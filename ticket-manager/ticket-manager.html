@@ -985,8 +985,8 @@ function renderDetail() {
           </div>
           <div class="atrow">
             <input type="text" class="finput" id="nt-tnotes" placeholder="Notes (optional)…" style="flex:1" />
-            <button class="btn btn-primary btn-sm" onclick="addTask()">Add</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleAddTask()">Cancel</button>
+            <button class="btn btn-primary btn-sm" tabindex="0" onclick="addTask()">Add</button>
+            <button class="btn btn-ghost btn-sm" tabindex="0" onclick="toggleAddTask()">Cancel</button>
           </div>
         </div>
       </div>
@@ -1276,7 +1276,12 @@ async function addTask() {
   } catch(e) { toast(e.message,'err'); }
 }
 
-document.getElementById('nt-task')?.addEventListener?.('keydown', e => { if(e.key==='Enter') addTask(); });
+// Task form Enter key — use event delegation since nt-task/nt-tnotes are rendered dynamically
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const id = e.target?.id;
+  if (id === 'nt-task' || id === 'nt-tnotes') { e.preventDefault(); addTask(); }
+});
 
 // INLINE TASK EDITOR
 function editTask(id) {
@@ -1808,6 +1813,13 @@ function showModal(id) {
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 // Close modals on bg click
 document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('show'); }));
+// New Ticket modal: Enter in any input or select submits the form
+document.getElementById('nt-modal').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+    e.preventDefault();
+    createTicket();
+  }
+});
 
 // ══════════════════════════════════════
 // DATE PICKER
