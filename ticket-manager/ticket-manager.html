@@ -271,7 +271,7 @@ textarea.finput{resize:vertical;min-height:80px}
     <div id="ntm-grid">
       <div class="fg fw"><div class="flabel">Subject *</div><input type="text" class="finput" id="nt-subject" placeholder="Brief subject..." /></div>
       <div class="fg">
-        <div class="flabel">Company</div>
+        <div class="flabel">Company *</div>
         <select class="finput" id="nt-company" onchange="onCompanyChange()">
           <option value="">— Loading… —</option>
         </select>
@@ -1731,9 +1731,10 @@ async function appendDescRef(label, url) {
 async function createTicket() {
   const sub = document.getElementById('nt-subject').value.trim();
   if (!sub) { toast('Subject required','err'); return; }
+  const companyId = document.getElementById('nt-company').value;
+  if (!companyId) { toast('Company required','err'); return; }
   const btn = document.getElementById('nt-save-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Creating…';
-  const companyId = document.getElementById('nt-company').value;
   const contactId = document.getElementById('nt-contact').value;
   const fields = {
     [TF.subject]: sub,
