@@ -437,6 +437,7 @@ const T_SEASON = 'tblbfy2peOy17gYvx';  // FM Seasons
 const SEASF_START = 'fldepLqOvu4IyT7UH'; // FM Seasons.Season Start
 const SEASF_END   = 'fldSqjWpIc6m4rogG'; // FM Seasons.Season End
 const CF_NAME  = 'fldgddNMEx5h9t38q'; // Companies.Company
+const CF_MID   = 'fldBK3qw2myLrNXDu'; // Companies.MID
 const COF_NAME = 'fldXW2KwH9nKHFf7E'; // Contacts.Full Name (formula)
 const COF_CO   = 'fldgHAbjybm0T8imT'; // Contacts.Company (link)
 
@@ -582,7 +583,7 @@ async function ensureTaskModeField() {
 async function loadCompanies() {
   try {
     const data = await loadAll(T_CO, {
-      fields:[CF_NAME],
+      fields:[CF_NAME, CF_MID],
       sort:[{f:CF_NAME, d:'asc'}],
     });
     allCompanies = data;
@@ -773,6 +774,12 @@ function resolveCompanyName(recId) {
   const id = typeof recId === 'object' ? recId.id : recId;
   const rec = allCompanies.find(c => c.id === id);
   return rec ? (rec.fields[CF_NAME] || '') : '';
+}
+function resolveCompanyMID(recId) {
+  if (!recId) return '';
+  const id = typeof recId === 'object' ? recId.id : recId;
+  const rec = allCompanies.find(c => c.id === id);
+  return rec ? (rec.fields[CF_MID] || '') : '';
 }
 
 async function loadTasks(ticket) {
@@ -990,6 +997,7 @@ function renderDetail() {
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
           <div class="fg"><div class="flabel">Ticket ID</div><div class="fval">#${f[TF.id]}</div></div>
           <div class="fg"><div class="flabel">Company</div><div class="fval">${co||'—'}</div></div>
+          ${(()=>{const mid=resolveCompanyMID(coId);return mid?`<div class="fg"><div class="flabel">MID</div><div class="fval" style="font-family:monospace;letter-spacing:.5px">${esc(mid)}</div></div>`:''})()}
           <div class="fg">
             <div class="flabel">Contact</div>
             <select class="finput" id="dt-contact" onchange="onDetailContactChange()" ${!coId?'disabled':''}>
