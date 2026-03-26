@@ -519,6 +519,58 @@
         <div id="merchant-feedback" style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px;"></div>
       </div>
 
+      <div class="card" style="--card-accent: var(--cocard-green);">
+        <div class="card-header">
+          <div class="card-title">Lead Lookup</div>
+          <span class="card-type" style="background:#eaf2d7;color:#3d5a1a;border:1px solid #b2cc80;">Airtable</span>
+        </div>
+        <div class="card-meta">Search · select · view &amp; edit in Airtable</div>
+        <div style="position:relative;margin-bottom:10px;">
+          <input
+            id="lead-search"
+            class="ticket-input"
+            type="text"
+            placeholder="Type lead name…"
+            autocomplete="off"
+            style="width:100%;border-color:#b2cc80;"
+          />
+          <div class="typeahead-dropdown" id="lead-dropdown" style="--hover-bg:#eaf2d7;--hover-color:#3d5a1a;"></div>
+        </div>
+        <button
+          id="lead-open-btn"
+          class="btn-launch"
+          style="background:#eaf2d7;border-color:#b2cc80;color:#3d5a1a;display:none;"
+          onclick="openLead()"
+        >↗ Open in Airtable</button>
+        <div id="lead-feedback" style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px;"></div>
+      </div>
+
+      <div class="card" style="--card-accent: #5a7fa0;">
+        <div class="card-header">
+          <div class="card-title">Vendor Lookup</div>
+          <span class="card-type" style="background:#dce8f0;color:#2a5070;border:1px solid #9ab5c8;">Airtable</span>
+        </div>
+        <div class="card-meta">Search · select · view &amp; edit in Airtable</div>
+        <div style="position:relative;margin-bottom:10px;">
+          <input
+            id="vendor-search"
+            class="ticket-input"
+            type="text"
+            placeholder="Type vendor name…"
+            autocomplete="off"
+            style="width:100%;border-color:#9ab5c8;"
+          />
+          <div class="typeahead-dropdown" id="vendor-dropdown" style="--hover-bg:#dce8f0;--hover-color:#2a5070;"></div>
+        </div>
+        <button
+          id="vendor-open-btn"
+          class="btn-launch"
+          style="background:#dce8f0;border-color:#9ab5c8;color:#2a5070;display:none;"
+          onclick="openVendor()"
+        >↗ Open in Airtable</button>
+        <div id="vendor-feedback" style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px;"></div>
+      </div>
+
     </div>
   </div>
 
@@ -668,6 +720,137 @@ function openMerchant() {
   document.getElementById('merchant-open-btn').style.display = 'none';
   document.getElementById('merchant-feedback').textContent = '';
   selectedMerchantId = null;
+}
+
+// ── Lead Lookup ───────────────────────────────────────────────
+// To enable record-level deep linking, create an Airtable Interface for the
+// Leads table, then set LEADS_INTERFACE_URL to the interface URL and
+// LEADS_INTERFACE_PARAM to its filter param key (same pattern as merchant).
+const LEADS_INTERFACE_URL   = 'https://airtable.com/apppYzklXP1tsbWnF/pagomow3YMHhcxQ6Y';
+const LEADS_INTERFACE_PARAM = 'eEX7V';
+const LEADS_TABLE_ID  = 'tblQe6TUV4DayDMUQ';
+const LEADS_FIELD_ID  = 'fldlnf7keCuQScL5x'; // Lead Name
+const LEADS_FIELD_NAME = 'Lead Name';
+
+let selectedLeadId = null;
+let leadDebounce;
+
+document.getElementById('lead-search').addEventListener('input', function () {
+  clearTimeout(leadDebounce);
+  selectedLeadId = null;
+  document.getElementById('lead-open-btn').style.display = 'none';
+  const q = this.value.trim();
+  if (q.length < 2) { closeDropdown('lead-dropdown'); return; }
+  leadDebounce = setTimeout(() => fetchAirtableRecords(
+    LEADS_TABLE_ID, LEADS_FIELD_NAME, LEADS_FIELD_ID,
+    q, 'lead-dropdown', selectLead
+  ), 300);
+});
+
+document.getElementById('lead-search').addEventListener('blur', function () {
+  setTimeout(() => closeDropdown('lead-dropdown'), 150);
+});
+
+function selectLead(id, name) {
+  selectedLeadId = id;
+  document.getElementById('lead-search').value = name;
+  document.getElementById('lead-open-btn').style.display = 'block';
+  closeDropdown('lead-dropdown');
+}
+
+function openLead() {
+  if (!selectedLeadId) return;
+  const url = LEADS_INTERFACE_URL
+    ? `${LEADS_INTERFACE_URL}?${LEADS_INTERFACE_PARAM}=${selectedLeadId}`
+    : `https://airtable.com/apppYzklXP1tsbWnF/${LEADS_TABLE_ID}`;
+  window.open(url, 'lead-view', 'width=1400,height=900,left=100,top=80');
+  document.getElementById('lead-search').value = '';
+  document.getElementById('lead-open-btn').style.display = 'none';
+  selectedLeadId = null;
+}
+
+// ── Vendor Lookup ─────────────────────────────────────────────
+// Same pattern — set VENDORS_INTERFACE_URL + VENDORS_INTERFACE_PARAM once
+// an Airtable Interface is created for the Vendors table.
+const VENDORS_INTERFACE_URL   = 'pagEfy6yBS65EWdsa';
+const VENDORS_INTERFACE_PARAM = 'EMiOl';
+const VENDORS_TABLE_ID  = 'tblMbMaXpdlUB7Bum';
+const VENDORS_FIELD_ID  = 'fldD7TpyflerzeJBL'; // Vendor Name
+const VENDORS_FIELD_NAME = 'Vendor Name';
+
+let selectedVendorId = null;
+let vendorDebounce;
+
+document.getElementById('vendor-search').addEventListener('input', function () {
+  clearTimeout(vendorDebounce);
+  selectedVendorId = null;
+  document.getElementById('vendor-open-btn').style.display = 'none';
+  const q = this.value.trim();
+  if (q.length < 2) { closeDropdown('vendor-dropdown'); return; }
+  vendorDebounce = setTimeout(() => fetchAirtableRecords(
+    VENDORS_TABLE_ID, VENDORS_FIELD_NAME, VENDORS_FIELD_ID,
+    q, 'vendor-dropdown', selectVendor
+  ), 300);
+});
+
+document.getElementById('vendor-search').addEventListener('blur', function () {
+  setTimeout(() => closeDropdown('vendor-dropdown'), 150);
+});
+
+function selectVendor(id, name) {
+  selectedVendorId = id;
+  document.getElementById('vendor-search').value = name;
+  document.getElementById('vendor-open-btn').style.display = 'block';
+  closeDropdown('vendor-dropdown');
+}
+
+function openVendor() {
+  if (!selectedVendorId) return;
+  const url = VENDORS_INTERFACE_URL
+    ? `${VENDORS_INTERFACE_URL}?${VENDORS_INTERFACE_PARAM}=${selectedVendorId}`
+    : `https://airtable.com/apppYzklXP1tsbWnF/${VENDORS_TABLE_ID}`;
+  window.open(url, 'vendor-view', 'width=1400,height=900,left=100,top=80');
+  document.getElementById('vendor-search').value = '';
+  document.getElementById('vendor-open-btn').style.display = 'none';
+  selectedVendorId = null;
+}
+
+// ── Shared Airtable search ────────────────────────────────────
+async function fetchAirtableRecords(tableId, fieldName, fieldId, q, dropdownId, onSelect) {
+  const dd = document.getElementById(dropdownId);
+  dd.innerHTML = '<div class="typeahead-empty">Searching…</div>';
+  dd.classList.add('open');
+  const apiKey = localStorage.getItem('at_tk');
+  if (!apiKey) {
+    dd.innerHTML = '<div class="typeahead-empty">API key not set — add at_tk to localStorage</div>';
+    return;
+  }
+  try {
+    const safe = q.replace(/"/g, '');
+    const formula = encodeURIComponent(`SEARCH(LOWER("${safe}"),LOWER({${fieldName}}))`);
+    const url = `https://api.airtable.com/v0/apppYzklXP1tsbWnF/${tableId}` +
+      `?filterByFormula=${formula}&fields[]=${encodeURIComponent(fieldId)}` +
+      `&returnFieldsByFieldId=true&maxRecords=10`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+    const data = await res.json();
+    const records = data.records || [];
+    if (!records.length) {
+      dd.innerHTML = '<div class="typeahead-empty">No matches found</div>';
+      return;
+    }
+    dd.innerHTML = records.map(r =>
+      `<div class="typeahead-item" data-id="${r.id}" data-name="${r.fields[fieldId] || ''}">${r.fields[fieldId] || ''}</div>`
+    ).join('');
+    dd.querySelectorAll('.typeahead-item').forEach(item => {
+      item.addEventListener('mousedown', () => onSelect(item.dataset.id, item.dataset.name));
+    });
+  } catch (e) {
+    dd.innerHTML = '<div class="typeahead-empty">Error loading results</div>';
+  }
+}
+
+function closeDropdown(id) {
+  document.getElementById(id).classList.remove('open');
 }
 
 async function fetchLastExecution(workflowId) {
