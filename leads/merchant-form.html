@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Application Form — CoCard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <style>
+    /* ============================================================
+       ENCRYPTION KEY — CHANGE BEFORE DEPLOY
+       Stored here only for reference; actual value is in JS below.
+       ============================================================ */
+
+    :root {
+      --cocard-blue:  #00304F;
+      --cocard-green: #69932F;
+      --bg:           #eef2f5;
+      --surface:      #ffffff;
+      --surface2:     #e8eef3;
+      --border:       #c8d8e4;
+      --border-light: #dce8f0;
+      --border-strong:#9ab5c8;
+      --text:         #001f33;
+      --text2:        #2a5070;
+      --muted:        #6a8fa8;
+      --accent:       #69932F;
+      --accent-hover: #527323;
+      --accent-light: rgba(105,147,47,.12);
+      --success:      #69932F;
+      --error:        #b33000;
+      --warning:      #b86e00;
+      --shadow:       0 2px 8px rgba(0,48,79,.10);
+      --shadow-md:    0 4px 16px rgba(0,48,79,.14);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--cocard-blue);
+      border-bottom: 3px solid var(--cocard-green);
+      padding: 18px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      background: var(--cocard-green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    .header-text p {
+      color: rgba(255,255,255,.6);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    /* ── Layout ── */
+    .form-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    /* ── Progress ── */
+    .progress-steps {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 36px;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .step-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      position: relative;
+      z-index: 1;
+    }
+    .step-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-top: 6px;
+      transition: color .2s;
+    }
+    .step-connector {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 15px 4px 0;
+      transition: background .2s;
+    }
+    .step-item.active .step-bubble {
+      background: var(--cocard-blue);
+      border-color: var(--cocard-blue);
+      color: #fff;
+    }
+    .step-item.active .step-label { color: var(--cocard-blue); font-weight: 700; }
+    .step-item.done .step-bubble {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .step-item.done .step-label { color: var(--accent); }
+    .step-connector.done { background: var(--accent); }
+
+    /* ── Warnings ── */
+    .alert {
+      border-radius: 8px;
+      padding: 13px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert-warning { background: rgba(184,110,0,.08); border: 1px solid rgba(184,110,0,.3); color: var(--warning); }
+    .alert-error   { background: rgba(179,48,0,.08);  border: 1px solid rgba(179,48,0,.25); color: var(--error); }
+
+    /* ── Form card ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    /* ── Page header ── */
+    .card-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 28px;
+    }
+    .card-header h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--cocard-blue);
+    }
+    .card-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .card-body { padding: 28px; }
+
+    /* ── Pages ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Sections ── */
+    .form-section { margin-bottom: 28px; }
+    .form-section:last-child { margin-bottom: 0; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text2);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    /* ── Field layout ── */
+    .field-row { display: grid; gap: 16px; margin-bottom: 16px; }
+    .field-row:last-child { margin-bottom: 0; }
+    .field-row.cols-2   { grid-template-columns: 1fr 1fr; }
+    .field-row.cols-3   { grid-template-columns: 1fr 1fr 1fr; }
+    .field-row.cols-city{ grid-template-columns: 2fr 1.2fr 1fr; }
+    .field-row.cols-name{ grid-template-columns: 1fr 1fr 0.5fr; }
+
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+
+    label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text2);
+    }
+    label .req { color: var(--error); margin-left: 2px; }
+
+    input[type=text],
+    input[type=email],
+    input[type=tel],
+    input[type=number],
+    input[type=date],
+    input[type=month],
+    select,
+    textarea {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      width: 100%;
+      font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--cocard-blue);
+      box-shadow: 0 0 0 3px rgba(0,48,79,.07);
+    }
+    input.invalid, select.invalid, textarea.invalid {
+      border-color: var(--error) !important;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .field-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Secure field ── */
+    .secure-wrap { position: relative; }
+    .secure-wrap input { padding-right: 70px; }
+    .secure-badge {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* ── Radio groups ── */
+    .radio-group { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 6px; }
+    .radio-opt {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .radio-opt input[type=radio] { cursor: pointer; accent-color: var(--cocard-blue); }
+
+    /* ── Conditional blocks ── */
+    .cond-block {
+      display: none;
+      margin-top: 16px;
+      padding: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+    }
+    .cond-block.show { display: block; }
+
+    /* ── Owner blocks ── */
+    .owner-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .owner-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 18px;
+    }
+    .owner-badge {
+      width: 22px;
+      height: 22px;
+      background: var(--cocard-blue);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Totals ── */
+    .total-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+    .total-val { font-weight: 700; color: var(--cocard-blue); }
+    .total-warn { color: var(--warning); font-weight: 600; display: none; }
+
+    /* ── File upload ── */
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .file-item.ach-only { display: none; }
+    .file-item.ach-only.show { display: flex; }
+    .file-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--surface2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text2);
+    }
+    .file-meta { flex: 1; }
+    .file-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .file-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .file-chosen { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+    .file-input-real { display: none; }
+    .file-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all .15s;
+    }
+    .file-btn:hover {
+      background: var(--surface2);
+      border-color: var(--cocard-blue);
+      color: var(--cocard-blue);
+    }
+
+    /* ── Form nav ── */
+    .form-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .btn {
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary { background: transparent; color: var(--text2); border: 1px solid var(--border-strong); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface2); color: var(--cocard-blue); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 17px;
+      height: 17px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+    }
+
+    /* ── Success state ── */
+    .success-state {
+      display: none;
+      text-align: center;
+      padding: 60px 40px;
+    }
+    .success-state.show { display: block; }
+    .success-icon {
+      width: 68px;
+      height: 68px;
+      background: var(--accent-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .success-state h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--cocard-blue);
+      margin-bottom: 12px;
+    }
+    .success-state p {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 440px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      .field-row.cols-2,
+      .field-row.cols-3,
+      .field-row.cols-city,
+      .field-row.cols-name { grid-template-columns: 1fr; }
+      .card-body { padding: 20px; }
+      .form-nav { padding: 16px 20px; }
+      .progress-steps { margin-bottom: 46px; }
+      .step-label { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="logo-mark">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="6" width="20" height="14" rx="2" stroke="white" stroke-width="1.6"/>
+        <rect x="2" y="10" width="20" height="3" fill="white"/>
+        <rect x="5" y="16" width="6" height="1.8" rx="0.9" fill="white"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>CoCard Merchant Services</h1>
+      <p>Merchant Application Form</p>
+    </div>
+  </div>
+</header>
+
+<div class="form-wrap">
+
+  <div class="alert alert-warning" id="no-lead-alert">
+    No application ID found. Please use the link from your invitation email. Your submission may not be received without a valid application ID.
+  </div>
+
+  <!-- ═══════════════ PROGRESS STEPS ═══════════════ -->
+  <div class="progress-steps" id="progress-steps">
+    <div class="step-item active" data-step="1">
+      <div class="step-bubble">1</div>
+      <div class="step-label">Business</div>
+    </div>
+    <div class="step-connector" id="conn-1"></div>
+    <div class="step-item" data-step="2">
+      <div class="step-bubble">2</div>
+      <div class="step-label">Profile</div>
+    </div>
+    <div class="step-connector" id="conn-2"></div>
+    <div class="step-item" data-step="3">
+      <div class="step-bubble">3</div>
+      <div class="step-label">Ownership</div>
+    </div>
+    <div class="step-connector" id="conn-3"></div>
+    <div class="step-item" data-step="4">
+      <div class="step-bubble">4</div>
+      <div class="step-label">Inventory</div>
+    </div>
+    <div class="step-connector" id="conn-4"></div>
+    <div class="step-item" data-step="5">
+      <div class="step-bubble">5</div>
+      <div class="step-label">Processing</div>
+    </div>
+    <div class="step-connector" id="conn-5"></div>
+    <div class="step-item" data-step="6">
+      <div class="step-bubble">6</div>
+      <div class="step-label">Documents</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ FORM CARD ═══════════════ -->
+  <div class="form-card">
+
+    <div class="alert alert-error" id="validation-alert" style="margin:20px 28px 0; border-radius:8px;"></div>
+
+    <!-- ─────────────────────────────────────────
+         PAGE 1 — Business & Contact Information
+    ───────────────────────────────────────────── -->
+    <div id="page-1" class="page active">
+      <div class="card-header">
+        <h2>Business &amp; Contact Information</h2>
+        <p>Provide your legal business name, address, and primary contact details.</p>
+      </div>
+      <div class="card-body">
+
+        <div class="form-section">
+          <div class="section-title">Legal Business</div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label for="legal_name">Legal Business Name <span class="req">*</span></label>
+              <input type="text" id="legal_name" placeholder="As it appears on tax documents">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label for="legal_address_line1">Legal Street Address <span class="req">*</span></label>
+              <input type="text" id="legal_address_line1" placeholder="Street address">
+            </div>
+          </div>
+
+          <div class="field-row cols-city">
+            <div class="field-group">
+              <label for="legal_city">City <span class="req">*</span></label>
+              <input type="text" id="legal_city">
+            </div>
+            <div class="field-group">
+              <label for="legal_state">State <span class="req">*</span></label>
+              <select id="legal_state" class="state-select">
+                <option value="">— Select —</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="legal_zip">ZIP <span class="req">*</span></label>
+              <input type="text" id="legal_zip" placeholder="12345" maxlength="10">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-title">DBA (Doing Business As)</div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label for="dba_name">DBA Name <span class="req">*</span></label>
+              <input type="text" id="dba_name" placeholder="Name used with customers">
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-bottom:16px">
+            <label>DBA Address <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-opt">
+                <input type="radio" name="dba_same" value="yes" checked>
+                <span>Same as legal address</span>
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="dba_same" value="no">
+                <span>Different address</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="cond-block" id="dba-address-block">
+            <div class="field-row">
+              <div class="field-group">
+                <label for="dba_address_line1">DBA Street Address</label>
+                <input type="text" id="dba_address_line1" placeholder="Street address">
+              </div>
+            </div>
+            <div class="field-row cols-city">
+              <div class="field-group">
+                <label for="dba_city">City</label>
+                <input type="text" id="dba_city">
+              </div>
+              <div class="field-group">
+                <label for="dba_state">State</label>
+                <select id="dba_state" class="state-select">
+                  <option value="">— Select —</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="dba_zip">ZIP</label>
+                <input type="text" id="dba_zip" placeholder="12345" maxlength="10">
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row" style="max-width:280px; margin-top:16px">
+            <div class="field-group">
+              <label for="dba_phone">DBA Business Phone <span class="req">*</span></label>
+              <input type="tel" id="dba_phone" placeholder="(555) 555-5555">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-title">Primary Contact</div>
+
+          <div class="field-row cols-name">
+            <div class="field-group">
+              <label for="contact_first">First Name <span class="req">*</span></label>
+              <input type="text" id="contact_first">
+            </div>
+            <div class="field-group">
+              <label for="contact_last">Last Name <span class="req">*</span></label>
+              <input type="text" id="contact_last">
+            </div>
+            <div class="field-group">
+              <label for="contact_suffix">Suffix</label>
+              <input type="text" id="contact_suffix" placeholder="Jr., Sr.">
+            </div>
+          </div>
+
+          <div class="field-row cols-2">
+            <div class="field-group">
+              <label for="contact_phone">Phone <span class="req">*</span></label>
+              <input type="tel" id="contact_phone" placeholder="(555) 555-5555">
+            </div>
+            <div class="field-group">
+              <label for="contact_email">Email <span class="req">*</span></label>
+              <input type="email" id="contact_email" placeholder="email@example.com">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-1 -->
+
+    <!-- ─────────────────────────────────────────
+         PAGE 2 — Business Profile
+    ───────────────────────────────────────────── -->
+    <div id="page-2" class="page">
+      <div class="card-header">
+        <h2>Business Profile</h2>
+        <p>Tell us about your business structure, tax information, and what you sell.</p>
+      </div>
+      <div class="card-body">
+
+        <div class="field-row cols-2">
+          <div class="field-group">
+            <label for="business_type">Business Type <span class="req">*</span></label>
+            <select id="business_type">
+              <option value="">— Select —</option>
+              <option>Sole Proprietor</option>
+              <option>Partnership</option>
+              <option>Corporation</option>
+              <option>LLC</option>
+              <option>Non-Profit</option>
+              <option>Government</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="state_incorporated">State Incorporated <span class="req">*</span></label>
+            <select id="state_incorporated" class="state-select">
+              <option value="">— Select —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row cols-2">
+          <div class="field-group">
+            <label for="ein">EIN / Tax ID <span class="req">*</span></label>
+            <div class="secure-wrap">
+              <input type="text" id="ein" placeholder="XX-XXXXXXX" autocomplete="off">
+              <span class="secure-badge">🔒 ENCRYPTED</span>
+            </div>
+            <div class="field-hint">Encrypted before transmission — never stored in plain text.</div>
+          </div>
+          <div class="field-group">
+            <label for="incorporated_date">Date Incorporated <span class="req">*</span></label>
+            <input type="month" id="incorporated_date">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="products_services">Products / Services Sold <span class="req">*</span></label>
+            <input type="text" id="products_services" placeholder="Briefly describe what your business sells or provides">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="refund_policy">Refund / Return Policy <span class="req">*</span></label>
+            <textarea id="refund_policy" rows="5" placeholder="Describe your refund and return policy in detail…"></textarea>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-2 -->
+
+    <!-- ─────────────────────────────────────────
+         PAGE 3 — Owner / Officer Information
+    ───────────────────────────────────────────── -->
+    <div id="page-3" class="page">
+      <div class="card-header">
+        <h2>Owner / Officer Information</h2>
+        <p>Required for all principal owners. Date of birth and SSN are encrypted before transmission.</p>
+      </div>
+      <div class="card-body">
+
+        <!-- Owner 1 -->
+        <div class="owner-card">
+          <div class="owner-card-title">
+            <div class="owner-badge">1</div>
+            Primary Owner / Officer
+          </div>
+
+          <div class="field-row cols-name">
+            <div class="field-group">
+              <label for="owner1_first">First Name <span class="req">*</span></label>
+              <input type="text" id="owner1_first">
+            </div>
+            <div class="field-group">
+              <label for="owner1_last">Last Name <span class="req">*</span></label>
+              <input type="text" id="owner1_last">
+            </div>
+            <div class="field-group">
+              <label for="owner1_suffix">Suffix</label>
+              <input type="text" id="owner1_suffix" placeholder="Jr., Sr.">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label for="owner1_address_line1">Home Street Address <span class="req">*</span></label>
+              <input type="text" id="owner1_address_line1">
+            </div>
+          </div>
+
+          <div class="field-row cols-city">
+            <div class="field-group">
+              <label for="owner1_city">City <span class="req">*</span></label>
+              <input type="text" id="owner1_city">
+            </div>
+            <div class="field-group">
+              <label for="owner1_state">State <span class="req">*</span></label>
+              <select id="owner1_state" class="state-select">
+                <option value="">— Select —</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="owner1_zip">ZIP <span class="req">*</span></label>
+              <input type="text" id="owner1_zip" maxlength="10">
+            </div>
+          </div>
+
+          <div class="field-row cols-2">
+            <div class="field-group">
+              <label for="owner1_phone">Home Phone <span class="req">*</span></label>
+              <input type="tel" id="owner1_phone" placeholder="(555) 555-5555">
+            </div>
+            <div class="field-group">
+              <label for="owner1_citizenship">Country of Citizenship <span class="req">*</span></label>
+              <input type="text" id="owner1_citizenship" value="United States">
+            </div>
+          </div>
+
+          <div class="field-row cols-2">
+            <div class="field-group">
+              <label for="owner1_dob">Date of Birth <span class="req">*</span></label>
+              <div class="secure-wrap">
+                <input type="date" id="owner1_dob" autocomplete="off">
+                <span class="secure-badge">🔒 ENCRYPTED</span>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="owner1_ssn">Social Security Number <span class="req">*</span></label>
+              <div class="secure-wrap">
+                <input type="text" id="owner1_ssn" placeholder="XXX-XX-XXXX" autocomplete="off" maxlength="11">
+                <span class="secure-badge">🔒 ENCRYPTED</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row cols-2">
+            <div class="field-group">
+              <label for="owner1_title">Title <span class="req">*</span></label>
+              <input type="text" id="owner1_title" placeholder="e.g. President, CEO, Owner">
+            </div>
+            <div class="field-group">
+              <label for="owner1_percent">Ownership % <span class="req">*</span></label>
+              <input type="number" id="owner1_percent" min="1" max="100" placeholder="e.g. 100">
+            </div>
+          </div>
+        </div><!-- /owner-card 1 -->
+
+        <div class="field-group" style="margin-bottom:8px">
+          <label>Are there other owners with 25% or more ownership? <span class="req">*</span></label>
+          <div class="radio-group">
+            <label class="radio-opt">
+              <input type="radio" name="has_additional_owners" value="no" checked>
+              <span>No</span>
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="has_additional_owners" value="yes">
+              <span>Yes</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Owner 2 (conditional) -->
+        <div class="cond-block" id="owner2-block">
+          <div class="owner-card" style="border:none;padding:0;margin:0">
+            <div class="owner-card-title">
+              <div class="owner-badge">2</div>
+              Additional Owner / Officer
+            </div>
+
+            <div class="field-row cols-name">
+              <div class="field-group">
+                <label for="owner2_first">First Name</label>
+                <input type="text" id="owner2_first">
+              </div>
+              <div class="field-group">
+                <label for="owner2_last">Last Name</label>
+                <input type="text" id="owner2_last">
+              </div>
+              <div class="field-group">
+                <label for="owner2_suffix">Suffix</label>
+                <input type="text" id="owner2_suffix" placeholder="Jr., Sr.">
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label for="owner2_address_line1">Home Street Address</label>
+                <input type="text" id="owner2_address_line1">
+              </div>
+            </div>
+
+            <div class="field-row cols-city">
+              <div class="field-group">
+                <label for="owner2_city">City</label>
+                <input type="text" id="owner2_city">
+              </div>
+              <div class="field-group">
+                <label for="owner2_state">State</label>
+                <select id="owner2_state" class="state-select">
+                  <option value="">— Select —</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="owner2_zip">ZIP</label>
+                <input type="text" id="owner2_zip" maxlength="10">
+              </div>
+            </div>
+
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="owner2_phone">Home Phone</label>
+                <input type="tel" id="owner2_phone" placeholder="(555) 555-5555">
+              </div>
+              <div class="field-group">
+                <label for="owner2_citizenship">Country of Citizenship</label>
+                <input type="text" id="owner2_citizenship" value="United States">
+              </div>
+            </div>
+
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="owner2_dob">Date of Birth</label>
+                <div class="secure-wrap">
+                  <input type="date" id="owner2_dob" autocomplete="off">
+                  <span class="secure-badge">🔒 ENCRYPTED</span>
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="owner2_ssn">Social Security Number</label>
+                <div class="secure-wrap">
+                  <input type="text" id="owner2_ssn" placeholder="XXX-XX-XXXX" autocomplete="off" maxlength="11">
+                  <span class="secure-badge">🔒 ENCRYPTED</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="owner2_title">Title</label>
+                <input type="text" id="owner2_title">
+              </div>
+              <div class="field-group">
+                <label for="owner2_percent">Ownership %</label>
+                <input type="number" id="owner2_percent" min="1" max="100">
+              </div>
+            </div>
+
+            <div class="field-group" style="margin-top:16px">
+              <label>Is there a third owner with 25% or more ownership?</label>
+              <div class="radio-group">
+                <label class="radio-opt">
+                  <input type="radio" name="has_owner3" value="no" checked>
+                  <span>No</span>
+                </label>
+                <label class="radio-opt">
+                  <input type="radio" name="has_owner3" value="yes">
+                  <span>Yes</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div><!-- /owner2-block -->
+
+        <!-- Owner 3 (conditional) -->
+        <div class="cond-block" id="owner3-block" style="margin-top:12px">
+          <div class="owner-card" style="border:none;padding:0;margin:0">
+            <div class="owner-card-title">
+              <div class="owner-badge">3</div>
+              Additional Owner / Officer
+            </div>
+
+            <div class="field-row cols-name">
+              <div class="field-group">
+                <label for="owner3_first">First Name</label>
+                <input type="text" id="owner3_first">
+              </div>
+              <div class="field-group">
+                <label for="owner3_last">Last Name</label>
+                <input type="text" id="owner3_last">
+              </div>
+              <div class="field-group">
+                <label for="owner3_suffix">Suffix</label>
+                <input type="text" id="owner3_suffix" placeholder="Jr., Sr.">
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label for="owner3_address_line1">Home Street Address</label>
+                <input type="text" id="owner3_address_line1">
+              </div>
+            </div>
+
+            <div class="field-row cols-city">
+              <div class="field-group">
+                <label for="owner3_city">City</label>
+                <input type="text" id="owner3_city">
+              </div>
+              <div class="field-group">
+                <label for="owner3_state">State</label>
+                <select id="owner3_state" class="state-select">
+                  <option value="">— Select —</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="owner3_zip">ZIP</label>
+                <input type="text" id="owner3_zip" maxlength="10">
+              </div>
+            </div>
+
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="owner3_phone">Home Phone</label>
+                <input type="tel" id="owner3_phone" placeholder="(555) 555-5555">
+              </div>
+              <div class="field-group">
+                <label for="owner3_citizenship">Country of Citizenship</label>
+                <input type="text" id="owner3_citizenship" value="United States">
+              </div>
+            </div>
+
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="owner3_dob">Date of Birth</label>
+                <div class="secure-wrap">
+                  <input type="date" id="owner3_dob" autocomplete="off">
+                  <span class="secure-badge">🔒 ENCRYPTED</span>
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="owner3_ssn">Social Security Number</label>
+                <div class="secure-wrap">
+                  <input type="text" id="owner3_ssn" placeholder="XXX-XX-XXXX" autocomplete="off" maxlength="11">
+                  <span class="secure-badge">🔒 ENCRYPTED</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="owner3_title">Title</label>
+                <input type="text" id="owner3_title">
+              </div>
+              <div class="field-group">
+                <label for="owner3_percent">Ownership %</label>
+                <input type="number" id="owner3_percent" min="1" max="100">
+              </div>
+            </div>
+          </div>
+        </div><!-- /owner3-block -->
+
+      </div>
+    </div><!-- /page-3 -->
+
+    <!-- ─────────────────────────────────────────
+         PAGE 4 — Inventory Information
+    ───────────────────────────────────────────── -->
+    <div id="page-4" class="page">
+      <div class="card-header">
+        <h2>Inventory Information</h2>
+        <p>Tell us how your products are managed, stored, and shipped to customers.</p>
+      </div>
+      <div class="card-body">
+
+        <div class="form-section">
+          <div class="field-group" style="margin-bottom:20px">
+            <label>Do you own the product / inventory?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="owns_inventory" value="Yes"><span>Yes</span></label>
+              <label class="radio-opt"><input type="radio" name="owns_inventory" value="No"><span>No</span></label>
+              <label class="radio-opt"><input type="radio" name="owns_inventory" value="Does not apply"><span>Does not apply</span></label>
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-bottom:20px">
+            <label>Is product / inventory stored on-site?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="inventory_on_site" value="Yes"><span>Yes</span></label>
+              <label class="radio-opt"><input type="radio" name="inventory_on_site" value="No"><span>No</span></label>
+              <label class="radio-opt"><input type="radio" name="inventory_on_site" value="Does not apply"><span>Does not apply</span></label>
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-bottom:20px">
+            <label>When is the customer charged?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="customer_charged_when" value="Time of order"><span>Time of order</span></label>
+              <label class="radio-opt"><input type="radio" name="customer_charged_when" value="Upon shipment"><span>Upon shipment</span></label>
+              <label class="radio-opt"><input type="radio" name="customer_charged_when" value="Does not apply"><span>Does not apply</span></label>
+              <label class="radio-opt"><input type="radio" name="customer_charged_when" value="Other"><span>Other</span></label>
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-bottom:20px">
+            <label>Do you use a fulfillment house?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="uses_fulfillment_house" value="Yes"><span>Yes</span></label>
+              <label class="radio-opt"><input type="radio" name="uses_fulfillment_house" value="No"><span>No</span></label>
+              <label class="radio-opt"><input type="radio" name="uses_fulfillment_house" value="Does not apply"><span>Does not apply</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-title">Delivery Timeframe</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+            Enter the percentage of orders delivered within each timeframe. Values should total 100%.
+          </p>
+
+          <div class="field-row cols-3">
+            <div class="field-group">
+              <label for="delivery_1to7_pct">1–7 Days %</label>
+              <input type="number" id="delivery_1to7_pct" min="0" max="100" placeholder="0">
+            </div>
+            <div class="field-group">
+              <label for="delivery_8to14_pct">8–14 Days %</label>
+              <input type="number" id="delivery_8to14_pct" min="0" max="100" placeholder="0">
+            </div>
+            <div class="field-group">
+              <label for="delivery_14plus_pct">14+ Days %</label>
+              <input type="number" id="delivery_14plus_pct" min="0" max="100" placeholder="0">
+            </div>
+          </div>
+          <div class="total-row">
+            Total: <span class="total-val" id="delivery-total">0%</span>
+            <span class="total-warn" id="delivery-warn">Should equal 100%</span>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-4 -->
+
+    <!-- ─────────────────────────────────────────
+         PAGE 5 — Payment Processing
+    ───────────────────────────────────────────── -->
+    <div id="page-5" class="page">
+      <div class="card-header">
+        <h2>Payment Processing Information</h2>
+        <p>Provide details about your expected credit card processing volume.</p>
+      </div>
+      <div class="card-body">
+
+        <div class="form-section">
+          <div class="section-title">Customer Breakdown</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+            Enter the percentage of sales made to businesses vs. the general public. Values should total 100%.
+          </p>
+
+          <div class="field-row cols-2">
+            <div class="field-group">
+              <label for="b2b_pct">Business to Business (B2B) %</label>
+              <input type="number" id="b2b_pct" min="0" max="100" placeholder="0">
+            </div>
+            <div class="field-group">
+              <label for="public_pct">Business to Public %</label>
+              <input type="number" id="public_pct" min="0" max="100" placeholder="0">
+            </div>
+          </div>
+          <div class="total-row">
+            Total: <span class="total-val" id="b2b-total">0%</span>
+            <span class="total-warn" id="b2b-warn">Should equal 100%</span>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-title">Credit Card Volume</div>
+
+          <div class="field-row cols-2">
+            <div class="field-group">
+              <label for="monthly_cc_sales">Total Monthly Credit Card Sales <span class="req">*</span></label>
+              <input type="number" id="monthly_cc_sales" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="field-group">
+              <label for="avg_cc_transaction">Average Credit Card Transaction</label>
+              <input type="number" id="avg_cc_transaction" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="field-row" style="max-width:280px">
+            <div class="field-group">
+              <label for="transactions_per_month">Number of Transactions / Month</label>
+              <input type="number" id="transactions_per_month" min="0" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-title">ACH Processing</div>
+
+          <div class="field-group" style="margin-bottom:8px">
+            <label>Would you like to apply for ACH (check) processing?</label>
+            <div class="radio-group">
+              <label class="radio-opt">
+                <input type="radio" name="ach_requested" value="no" checked>
+                <span>No</span>
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="ach_requested" value="yes">
+                <span>Yes</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="cond-block" id="ach-fields">
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="monthly_check_sales">Total Monthly Check Sales</label>
+                <input type="number" id="monthly_check_sales" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <div class="field-group">
+                <label for="checks_per_month">Checks per Month</label>
+                <input type="number" id="checks_per_month" min="0" placeholder="0">
+              </div>
+            </div>
+            <div class="field-row cols-2">
+              <div class="field-group">
+                <label for="avg_check_amount">Average Check Amount</label>
+                <input type="number" id="avg_check_amount" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <div class="field-group">
+                <label for="max_check_amount">Maximum Single Check Amount</label>
+                <input type="number" id="max_check_amount" min="0" step="0.01" placeholder="0.00">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /page-5 -->
+
+    <!-- ─────────────────────────────────────────
+         PAGE 6 — Supporting Documents
+    ───────────────────────────────────────────── -->
+    <div id="page-6" class="page">
+      <div class="card-header">
+        <h2>Supporting Documents</h2>
+        <p>Upload required documents to complete your application. Files are securely transmitted.</p>
+      </div>
+      <div class="card-body" id="page6-body">
+
+        <div class="form-section">
+          <div class="section-title">Required Documents — Credit Card Application</div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Voided Check or Bank Letter</div>
+              <div class="file-desc">Required for bank account verification</div>
+              <div class="file-chosen" id="chosen-voided_check"></div>
+            </div>
+            <div>
+              <input type="file" id="file-voided_check" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('voided_check')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><circle cx="9" cy="7" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M3 16c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Driver's License</div>
+              <div class="file-desc">Government-issued photo ID for primary owner</div>
+              <div class="file-chosen" id="chosen-drivers_license"></div>
+            </div>
+            <div>
+              <input type="file" id="file-drivers_license" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('drivers_license')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Articles of Incorporation</div>
+              <div class="file-chosen" id="chosen-articles_of_incorporation"></div>
+            </div>
+            <div>
+              <input type="file" id="file-articles_of_incorporation" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('articles_of_incorporation')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">IRS Tax ID Letter</div>
+              <div class="file-desc">EIN confirmation letter from the IRS</div>
+              <div class="file-chosen" id="chosen-irs_tax_id_letter"></div>
+            </div>
+            <div>
+              <input type="file" id="file-irs_tax_id_letter" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('irs_tax_id_letter')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Bank Statements — Last 3 Months</div>
+              <div class="file-desc">If requested</div>
+              <div class="file-chosen" id="chosen-bank_statements"></div>
+            </div>
+            <div>
+              <input type="file" id="file-bank_statements" class="file-input-real" accept="image/*,.pdf" multiple>
+              <button type="button" class="file-btn" onclick="triggerFile('bank_statements')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Processing Statements — Last 3 Months</div>
+              <div class="file-desc">If requested</div>
+              <div class="file-chosen" id="chosen-processing_statements"></div>
+            </div>
+            <div>
+              <input type="file" id="file-processing_statements" class="file-input-real" accept="image/*,.pdf" multiple>
+              <button type="button" class="file-btn" onclick="triggerFile('processing_statements')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Business Financials</div>
+              <div class="file-desc">If requested</div>
+              <div class="file-chosen" id="chosen-business_financials"></div>
+            </div>
+            <div>
+              <input type="file" id="file-business_financials" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('business_financials')">Choose File</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" id="ach-docs-section" style="display:none">
+          <div class="section-title">Additional Documents — ACH Processing</div>
+
+          <div class="file-item ach-only show">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Bank Statement — Latest Month</div>
+              <div class="file-desc">Most recent month available</div>
+              <div class="file-chosen" id="chosen-ach_bank_statement"></div>
+            </div>
+            <div>
+              <input type="file" id="file-ach_bank_statement" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('ach_bank_statement')">Choose File</button>
+            </div>
+          </div>
+
+          <div class="file-item ach-only show">
+            <div class="file-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name">Proof of Business</div>
+              <div class="file-desc">CC processing statement, business license, sales tax license, or utility bill</div>
+              <div class="file-chosen" id="chosen-ach_proof_of_business"></div>
+            </div>
+            <div>
+              <input type="file" id="file-ach_proof_of_business" class="file-input-real" accept="image/*,.pdf">
+              <button type="button" class="file-btn" onclick="triggerFile('ach_proof_of_business')">Choose File</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Success state (replaces body on successful submit) -->
+      <div class="success-state" id="success-state">
+        <div class="success-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M6 16l7 7 13-13" stroke="#69932F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3>Application Submitted</h3>
+        <p>Thank you — your merchant application has been received. A representative will be in touch with next steps.</p>
+      </div>
+    </div><!-- /page-6 -->
+
+    <!-- ═══════════ NAVIGATION ═══════════ -->
+    <div class="form-nav" id="form-nav">
+      <button class="btn btn-secondary" id="prev-btn" disabled>&#8592; Previous</button>
+      <button class="btn btn-primary" id="next-btn">Next &#8594;</button>
+    </div>
+
+  </div><!-- /form-card -->
+</div><!-- /form-wrap -->
+
+<script>
+// ============================================================
+//  ENCRYPTION KEY — CHANGE THIS BEFORE DEPLOY
+// ============================================================
+const ENCRYPTION_KEY = 'CHANGE_ME_BEFORE_DEPLOY';
+
+const WEBHOOK_URL = 'https://karenwidas.app.n8n.cloud/webhook/merchant-form-submit';
+
+const US_STATES = [
+  'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
+  'Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois',
+  'Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts',
+  'Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
+  'New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota',
+  'Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina',
+  'South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington',
+  'West Virginia','Wisconsin','Wyoming'
+];
+
+let currentPage = 1;
+const TOTAL_PAGES = 6;
+let leadId = null;
+
+// ── Init ─────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Populate state selects
+  document.querySelectorAll('select.state-select').forEach(function(sel) {
+    US_STATES.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      sel.appendChild(opt);
+    });
+  });
+
+  // Read leadId from URL
+  var params = new URLSearchParams(window.location.search);
+  leadId = params.get('leadId');
+  if (!leadId) {
+    document.getElementById('no-lead-alert').classList.add('show');
+  }
+
+  // Wire up conditional radio listeners
+  wireRadios('dba_same', toggleDbaAddress);
+  wireRadios('has_additional_owners', toggleAdditionalOwners);
+  wireRadios('has_owner3', toggleOwner3);
+  wireRadios('ach_requested', toggleAch);
+
+  // Wire percentage totals
+  wireInput('delivery_1to7_pct', updateDeliveryTotal);
+  wireInput('delivery_8to14_pct', updateDeliveryTotal);
+  wireInput('delivery_14plus_pct', updateDeliveryTotal);
+  wireInput('b2b_pct', updateB2BTotal);
+  wireInput('public_pct', updateB2BTotal);
+
+  // File input change listeners
+  var fileKeys = [
+    'voided_check','drivers_license','articles_of_incorporation','irs_tax_id_letter',
+    'bank_statements','processing_statements','business_financials',
+    'ach_bank_statement','ach_proof_of_business'
+  ];
+  fileKeys.forEach(function(key) {
+    var input = document.getElementById('file-' + key);
+    if (input) {
+      input.addEventListener('change', function() {
+        var chosen = document.getElementById('chosen-' + key);
+        if (chosen) {
+          if (input.files.length === 1) {
+            chosen.textContent = input.files[0].name;
+          } else if (input.files.length > 1) {
+            chosen.textContent = input.files.length + ' files selected';
+          } else {
+            chosen.textContent = '';
+          }
+        }
+      });
+    }
+  });
+
+  // Nav buttons
+  document.getElementById('prev-btn').addEventListener('click', prevPage);
+  document.getElementById('next-btn').addEventListener('click', nextPage);
+});
+
+function wireRadios(name, handler) {
+  document.querySelectorAll('input[name="' + name + '"]').forEach(function(el) {
+    el.addEventListener('change', handler);
+  });
+}
+
+function wireInput(id, handler) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', handler);
+}
+
+// ── Conditional toggles ───────────────────────────────────────
+
+function toggleDbaAddress() {
+  var same = getRadio('dba_same') === 'yes';
+  document.getElementById('dba-address-block').classList.toggle('show', !same);
+}
+
+function toggleAdditionalOwners() {
+  var has = getRadio('has_additional_owners') === 'yes';
+  document.getElementById('owner2-block').classList.toggle('show', has);
+  if (!has) {
+    // hide owner3 too
+    document.getElementById('owner3-block').classList.remove('show');
+  }
+}
+
+function toggleOwner3() {
+  var has = getRadio('has_owner3') === 'yes';
+  document.getElementById('owner3-block').classList.toggle('show', has);
+}
+
+function toggleAch() {
+  var yes = getRadio('ach_requested') === 'yes';
+  document.getElementById('ach-fields').classList.toggle('show', yes);
+  document.getElementById('ach-docs-section').style.display = yes ? 'block' : 'none';
+}
+
+// ── Percentage totals ─────────────────────────────────────────
+
+function updateDeliveryTotal() {
+  var a = parseFloat(document.getElementById('delivery_1to7_pct').value)  || 0;
+  var b = parseFloat(document.getElementById('delivery_8to14_pct').value) || 0;
+  var c = parseFloat(document.getElementById('delivery_14plus_pct').value)|| 0;
+  var t = a + b + c;
+  document.getElementById('delivery-total').textContent = t + '%';
+  document.getElementById('delivery-warn').style.display = (t > 0 && t !== 100) ? 'inline' : 'none';
+}
+
+function updateB2BTotal() {
+  var a = parseFloat(document.getElementById('b2b_pct').value)   || 0;
+  var b = parseFloat(document.getElementById('public_pct').value) || 0;
+  var t = a + b;
+  document.getElementById('b2b-total').textContent = t + '%';
+  document.getElementById('b2b-warn').style.display = (t > 0 && t !== 100) ? 'inline' : 'none';
+}
+
+// ── File uploads ──────────────────────────────────────────────
+
+function triggerFile(key) {
+  document.getElementById('file-' + key).click();
+}
+
+function readFileAsBase64(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      resolve({ name: file.name, data: reader.result.split(',')[1] });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getFileData(key) {
+  var input = document.getElementById('file-' + key);
+  if (!input || input.files.length === 0) return Promise.resolve(null);
+  // For multi-file inputs, take first file only in payload (simplification)
+  return readFileAsBase64(input.files[0]);
+}
+
+// ── Navigation ────────────────────────────────────────────────
+
+function goToPage(n) {
+  document.getElementById('page-' + currentPage).classList.remove('active');
+  currentPage = n;
+  document.getElementById('page-' + currentPage).classList.add('active');
+  updateProgress();
+  updateNavButtons();
+  clearValidationAlert();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextPage() {
+  if (!validatePage(currentPage)) return;
+  if (currentPage === TOTAL_PAGES) {
+    submitForm();
+    return;
+  }
+  goToPage(currentPage + 1);
+}
+
+function prevPage() {
+  if (currentPage > 1) goToPage(currentPage - 1);
+}
+
+function updateNavButtons() {
+  document.getElementById('prev-btn').disabled = currentPage === 1;
+  var nextBtn = document.getElementById('next-btn');
+  if (currentPage === TOTAL_PAGES) {
+    nextBtn.innerHTML = '<span>Submit Application</span>';
+  } else {
+    nextBtn.innerHTML = 'Next &#8594;';
+  }
+}
+
+function updateProgress() {
+  document.querySelectorAll('.step-item').forEach(function(el) {
+    var n = parseInt(el.getAttribute('data-step'));
+    el.classList.remove('active', 'done');
+    if (n < currentPage) el.classList.add('done');
+    else if (n === currentPage) el.classList.add('active');
+  });
+  for (var i = 1; i <= TOTAL_PAGES - 1; i++) {
+    var conn = document.getElementById('conn-' + i);
+    if (conn) conn.classList.toggle('done', i < currentPage);
+  }
+}
+
+// ── Validation ────────────────────────────────────────────────
+
+function validatePage(page) {
+  var missing = [];
+
+  if (page === 1) {
+    required(['legal_name','legal_address_line1','legal_city','legal_state','legal_zip',
+      'dba_name','dba_phone','contact_first','contact_last','contact_phone','contact_email'],
+      missing);
+    if (getRadio('dba_same') === 'no') {
+      required(['dba_address_line1','dba_city','dba_state','dba_zip'], missing);
+    }
+  }
+
+  if (page === 2) {
+    required(['business_type','state_incorporated','ein','incorporated_date',
+      'products_services','refund_policy'], missing);
+  }
+
+  if (page === 3) {
+    required(['owner1_first','owner1_last','owner1_address_line1','owner1_city',
+      'owner1_state','owner1_zip','owner1_phone','owner1_citizenship',
+      'owner1_dob','owner1_ssn','owner1_title','owner1_percent'], missing);
+  }
+
+  if (page === 5) {
+    required(['monthly_cc_sales'], missing);
+  }
+
+  if (missing.length > 0) {
+    missing.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('invalid');
+    });
+    showValidationAlert('Please complete all required fields before continuing.');
+    return false;
+  }
+
+  return true;
+}
+
+function required(ids, missing) {
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('invalid');
+    if (!el.value || el.value.trim() === '') missing.push(id);
+  });
+}
+
+function showValidationAlert(msg) {
+  var el = document.getElementById('validation-alert');
+  el.textContent = msg;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function clearValidationAlert() {
+  var el = document.getElementById('validation-alert');
+  el.classList.remove('show');
+  el.textContent = '';
+}
+
+// ── Encryption ────────────────────────────────────────────────
+
+function encrypt(value) {
+  if (!value) return '';
+  return CryptoJS.AES.encrypt(value, ENCRYPTION_KEY).toString();
+}
+
+// ── Submit ────────────────────────────────────────────────────
+
+function getRadio(name) {
+  var el = document.querySelector('input[name="' + name + '"]:checked');
+  return el ? el.value : '';
+}
+
+function val(id) {
+  var el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function numVal(id) {
+  var v = parseFloat(val(id));
+  return isNaN(v) ? 0 : v;
+}
+
+function submitForm() {
+  var nextBtn = document.getElementById('next-btn');
+  nextBtn.disabled = true;
+  nextBtn.innerHTML = '<span class="spinner"></span><span>Submitting…</span>';
+
+  var fileKeys = [
+    'voided_check','drivers_license','articles_of_incorporation','irs_tax_id_letter',
+    'bank_statements','processing_statements','business_financials',
+    'ach_bank_statement','ach_proof_of_business'
+  ];
+
+  var filePromises = fileKeys.map(function(key) {
+    return getFileData(key).then(function(data) {
+      return { key: key, data: data };
+    });
+  });
+
+  Promise.all(filePromises).then(function(fileResults) {
+    var files = {};
+    fileResults.forEach(function(f) {
+      files[f.key] = f.data || { name: '', data: '' };
+    });
+
+    var payload = {
+      leadId: leadId || '',
+      legal_name:          val('legal_name'),
+      legal_address_line1: val('legal_address_line1'),
+      legal_city:          val('legal_city'),
+      legal_state:         val('legal_state'),
+      legal_zip:           val('legal_zip'),
+      dba_name:            val('dba_name'),
+      dba_address_line1:   getRadio('dba_same') === 'yes' ? val('legal_address_line1') : val('dba_address_line1'),
+      dba_city:            getRadio('dba_same') === 'yes' ? val('legal_city')           : val('dba_city'),
+      dba_state:           getRadio('dba_same') === 'yes' ? val('legal_state')          : val('dba_state'),
+      dba_zip:             getRadio('dba_same') === 'yes' ? val('legal_zip')            : val('dba_zip'),
+      dba_phone:           val('dba_phone'),
+      contact_first:       val('contact_first'),
+      contact_last:        val('contact_last'),
+      contact_suffix:      val('contact_suffix'),
+      contact_phone:       val('contact_phone'),
+      contact_email:       val('contact_email'),
+      business_type:       val('business_type'),
+      ein:                 encrypt(val('ein')),
+      state_incorporated:  val('state_incorporated'),
+      incorporated_date:   val('incorporated_date'),
+      products_services:   val('products_services'),
+      refund_policy:       val('refund_policy'),
+      owner1_first:        val('owner1_first'),
+      owner1_last:         val('owner1_last'),
+      owner1_suffix:       val('owner1_suffix'),
+      owner1_address_line1:val('owner1_address_line1'),
+      owner1_city:         val('owner1_city'),
+      owner1_state:        val('owner1_state'),
+      owner1_zip:          val('owner1_zip'),
+      owner1_phone:        val('owner1_phone'),
+      owner1_citizenship:  val('owner1_citizenship'),
+      owner1_dob:          encrypt(val('owner1_dob')),
+      owner1_ssn:          encrypt(val('owner1_ssn')),
+      owner1_title:        val('owner1_title'),
+      owner1_percent:      numVal('owner1_percent'),
+      has_additional_owners: getRadio('has_additional_owners') === 'yes',
+      owner2_first:        val('owner2_first'),
+      owner2_last:         val('owner2_last'),
+      owner2_suffix:       val('owner2_suffix'),
+      owner2_address_line1:val('owner2_address_line1'),
+      owner2_city:         val('owner2_city'),
+      owner2_state:        val('owner2_state'),
+      owner2_zip:          val('owner2_zip'),
+      owner2_phone:        val('owner2_phone'),
+      owner2_citizenship:  val('owner2_citizenship'),
+      owner2_dob:          encrypt(val('owner2_dob')),
+      owner2_ssn:          encrypt(val('owner2_ssn')),
+      owner2_title:        val('owner2_title'),
+      owner2_percent:      numVal('owner2_percent'),
+      owner3_first:        val('owner3_first'),
+      owner3_last:         val('owner3_last'),
+      owner3_suffix:       val('owner3_suffix'),
+      owner3_address_line1:val('owner3_address_line1'),
+      owner3_city:         val('owner3_city'),
+      owner3_state:        val('owner3_state'),
+      owner3_zip:          val('owner3_zip'),
+      owner3_phone:        val('owner3_phone'),
+      owner3_citizenship:  val('owner3_citizenship'),
+      owner3_dob:          encrypt(val('owner3_dob')),
+      owner3_ssn:          encrypt(val('owner3_ssn')),
+      owner3_title:        val('owner3_title'),
+      owner3_percent:      numVal('owner3_percent'),
+      owns_inventory:          getRadio('owns_inventory'),
+      inventory_on_site:       getRadio('inventory_on_site'),
+      customer_charged_when:   getRadio('customer_charged_when'),
+      uses_fulfillment_house:  getRadio('uses_fulfillment_house'),
+      delivery_1to7_pct:       numVal('delivery_1to7_pct'),
+      delivery_8to14_pct:      numVal('delivery_8to14_pct'),
+      delivery_14plus_pct:     numVal('delivery_14plus_pct'),
+      b2b_pct:                 numVal('b2b_pct'),
+      public_pct:              numVal('public_pct'),
+      monthly_cc_sales:        numVal('monthly_cc_sales'),
+      avg_cc_transaction:      numVal('avg_cc_transaction'),
+      transactions_per_month:  numVal('transactions_per_month'),
+      ach_requested:           getRadio('ach_requested') === 'yes',
+      monthly_check_sales:     numVal('monthly_check_sales'),
+      checks_per_month:        numVal('checks_per_month'),
+      avg_check_amount:        numVal('avg_check_amount'),
+      max_check_amount:        numVal('max_check_amount'),
+      files: files
+    };
+
+    return fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  })
+  .then(function(resp) {
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    showSuccess();
+  })
+  .catch(function(err) {
+    console.error('Submit error:', err);
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = 'Submit Application';
+    showValidationAlert('There was a problem submitting your application. Please try again or contact your representative.');
+  });
+}
+
+function showSuccess() {
+  document.getElementById('page6-body').style.display = 'none';
+  document.getElementById('success-state').classList.add('show');
+  document.getElementById('form-nav').style.display = 'none';
+  document.getElementById('progress-steps').style.display = 'none';
+  document.getElementById('no-lead-alert').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

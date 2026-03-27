@@ -1,0 +1,171 @@
+{
+  "name": "Convert Lead to Customer",
+  "nodes": [
+    {
+      "id": "a5000001-0000-0000-0000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "notes": "Receives POST { leadId } — triggered by a Convert button in Airtable or leads.html",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "convert-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "a5000001-0000-0000-0000-000000000002",
+      "name": "Get Lead Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "notes": "Fetches full lead record so all fields are available downstream",
+      "parameters": {
+        "operation": "get",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a5000001-0000-0000-0000-000000000003",
+      "name": "Create Company",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Creates new Companies record using DBA Name as the company name. Account Status set to Active.",
+      "parameters": {
+        "operation": "create",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblPEGS3d1QsE0KY1", "mode": "id" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company": "={{ $('Get Lead Record').item.json.fields['DBA Name'] }}",
+            "Account Status": "Active"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a5000001-0000-0000-0000-000000000004",
+      "name": "Create Contact",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "notes": "Creates Contacts record from lead contact fields and links it to the newly created Company",
+      "parameters": {
+        "operation": "create",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblR80p5dAGRBx68K", "mode": "id" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "First Name": "={{ $('Get Lead Record').item.json.fields['Contact First'] }}",
+            "Last Name": "={{ $('Get Lead Record').item.json.fields['Contact Last'] }}",
+            "Email": "={{ $('Get Lead Record').item.json.fields['Contact Email'] }}",
+            "Phone": "={{ $('Get Lead Record').item.json.fields['Contact Phone'] }}",
+            "Company": ["={{ $('Create Company').item.json.id }}"]
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a5000001-0000-0000-0000-000000000005",
+      "name": "Move Dropbox Folder",
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "notes": "Moves folder from _CoCard/_Leads/ to _CoCard/_Customers/ using the stored Dropbox Folder Path",
+      "parameters": {
+        "resource": "file",
+        "operation": "move",
+        "path": "={{ $('Get Lead Record').item.json.fields['Dropbox Folder Path'] }}",
+        "toPath": "=/_CoCard/_Customers/{{ $('Get Lead Record').item.json.fields['DBA Name'] }}/"
+      },
+      "credentials": {
+        "dropboxOAuth2Api": { "id": "", "name": "Dropbox" }
+      }
+    },
+    {
+      "id": "a5000001-0000-0000-0000-000000000006",
+      "name": "Update Lead",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1250, 300],
+      "notes": "Sets lead Status to Converted and links to the new Companies record",
+      "parameters": {
+        "operation": "update",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Converted",
+            "Linked Company": ["={{ $('Create Company').item.json.id }}"]
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a5000001-0000-0000-0000-000000000007",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "notes": "Returns the new company record ID so the caller can deep-link to it in Airtable",
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, companyId: $('Create Company').item.json.id }) }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Get Lead Record", "type": "main", "index": 0 }]]
+    },
+    "Get Lead Record": {
+      "main": [[{ "node": "Create Company", "type": "main", "index": 0 }]]
+    },
+    "Create Company": {
+      "main": [[{ "node": "Create Contact", "type": "main", "index": 0 }]]
+    },
+    "Create Contact": {
+      "main": [[{ "node": "Move Dropbox Folder", "type": "main", "index": 0 }]]
+    },
+    "Move Dropbox Folder": {
+      "main": [[{ "node": "Update Lead", "type": "main", "index": 0 }]]
+    },
+    "Update Lead": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}

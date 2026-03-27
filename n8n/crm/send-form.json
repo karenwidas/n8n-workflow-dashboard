@@ -1,0 +1,87 @@
+{
+  "name": "Send Merchant Form",
+  "nodes": [
+    {
+      "id": "a2000001-0000-0000-0000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-form",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "a2000001-0000-0000-0000-000000000002",
+      "name": "Send Form Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.body.contactEmail }}",
+        "subject": "Your CoCard Merchant Application",
+        "emailType": "html",
+        "message": "={{ `<div style=\"font-family:Arial,sans-serif;max-width:600px;margin:0 auto;\">\n  <div style=\"background:#00304F;padding:24px 32px;border-bottom:3px solid #69932F;\">\n    <h1 style=\"color:#fff;margin:0;font-size:22px;\">CoCard Merchant Services</h1>\n  </div>\n  <div style=\"padding:32px;\">\n    <p style=\"font-size:15px;color:#001f33;\">Hi ${$json.body.contactFirst},</p>\n    <p style=\"font-size:15px;color:#333;line-height:1.6;\">Your merchant application for <strong>${$json.body.dbaName}</strong> is ready to complete. Please click the button below to fill out and submit your application.</p>\n    <div style=\"text-align:center;margin:32px 0;\">\n      <a href=\"https://karenwidas.github.io/_DevPlus/_Self/leads/merchant-form.html?leadId=${$json.body.leadId}\" style=\"background:#69932F;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;\">Complete Your Application</a>\n    </div>\n    <p style=\"font-size:13px;color:#6a8fa8;\">If the button doesn't work, copy and paste this link into your browser:</p>\n    <p style=\"font-size:12px;color:#6a8fa8;word-break:break-all;\">https://karenwidas.github.io/_DevPlus/_Self/leads/merchant-form.html?leadId=${$json.body.leadId}</p>\n    <hr style=\"border:none;border-top:1px solid #e0e0e0;margin:24px 0;\">\n    <p style=\"font-size:12px;color:#999;\">Questions? Reply to this email or contact your CoCard representative.</p>\n  </div>\n</div>` }}"
+      },
+      "credentials": {
+        "gmailOAuth2": { "id": "", "name": "Gmail — karen@karenwidas.com" }
+      }
+    },
+    {
+      "id": "a2000001-0000-0000-0000-000000000003",
+      "name": "Update Lead",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "operation": "update",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Form Sent",
+            "Form Sent Date": "={{ new Date().toISOString().split('T')[0] }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a2000001-0000-0000-0000-000000000004",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Send Form Email", "type": "main", "index": 0 }]]
+    },
+    "Send Form Email": {
+      "main": [[{ "node": "Update Lead", "type": "main", "index": 0 }]]
+    },
+    "Update Lead": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}

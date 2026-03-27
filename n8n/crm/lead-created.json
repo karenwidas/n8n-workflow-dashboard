@@ -1,0 +1,72 @@
+{
+  "name": "Lead Created",
+  "nodes": [
+    {
+      "id": "a1000001-0000-0000-0000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "notes": "Receives POST { leadId, leadName } from Airtable automation Run Script when a new Leads record is created",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-created",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000002",
+      "name": "Create Dropbox Folder",
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "notes": "Creates folder at /_CoCard/_Leads/{Lead Name}/",
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "path": "=/_CoCard/_Leads/{{ $json.body.leadName }}"
+      },
+      "credentials": {
+        "dropboxOAuth2Api": { "id": "", "name": "Dropbox" }
+      }
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000003",
+      "name": "Write Folder Path",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Writes the Dropbox folder path back to the lead record so downstream workflows know where to upload files",
+      "parameters": {
+        "operation": "update",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Dropbox Folder Path": "=/_CoCard/_Leads/{{ $('Webhook').item.json.body.leadName }}/"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Create Dropbox Folder", "type": "main", "index": 0 }]]
+    },
+    "Create Dropbox Folder": {
+      "main": [[{ "node": "Write Folder Path", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}

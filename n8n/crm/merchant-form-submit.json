@@ -1,0 +1,143 @@
+{
+  "name": "Merchant Form Submitted",
+  "nodes": [
+    {
+      "id": "a3000001-0000-0000-0000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "merchant-form-submit",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "a3000001-0000-0000-0000-000000000002",
+      "name": "Get Lead",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "notes": "Fetches lead record to get Dropbox Folder Path for file uploads",
+      "parameters": {
+        "operation": "get",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a3000001-0000-0000-0000-000000000003",
+      "name": "Update Lead Fields",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Writes all form fields to the lead record. Encrypted fields (EIN, DOBs, SSNs) are intentionally excluded.",
+      "parameters": {
+        "operation": "update",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Form Received",
+            "Form Received Date": "={{ new Date().toISOString().split('T')[0] }}",
+            "Legal Name": "={{ $('Webhook').item.json.body.legal_name }}",
+            "DBA Name": "={{ $('Webhook').item.json.body.dba_name }}",
+            "Contact First": "={{ $('Webhook').item.json.body.contact_first }}",
+            "Contact Last": "={{ $('Webhook').item.json.body.contact_last }}",
+            "Contact Suffix": "={{ $('Webhook').item.json.body.contact_suffix }}",
+            "Contact Phone": "={{ $('Webhook').item.json.body.contact_phone }}",
+            "Contact Email": "={{ $('Webhook').item.json.body.contact_email }}",
+            "Legal Address": "={{ $('Webhook').item.json.body.legal_address_line1 }}",
+            "Legal City": "={{ $('Webhook').item.json.body.legal_city }}",
+            "Legal State": "={{ $('Webhook').item.json.body.legal_state }}",
+            "Legal Zip": "={{ $('Webhook').item.json.body.legal_zip }}",
+            "DBA Address": "={{ $('Webhook').item.json.body.dba_address_line1 }}",
+            "DBA City": "={{ $('Webhook').item.json.body.dba_city }}",
+            "DBA State": "={{ $('Webhook').item.json.body.dba_state }}",
+            "DBA Zip": "={{ $('Webhook').item.json.body.dba_zip }}",
+            "DBA Phone": "={{ $('Webhook').item.json.body.dba_phone }}",
+            "Business Type": "={{ $('Webhook').item.json.body.business_type }}",
+            "Products Services": "={{ $('Webhook').item.json.body.products_services }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "a3000001-0000-0000-0000-000000000004",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "notes": "Responds immediately so the form doesn't time out. File uploads continue in the background.",
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}"
+      }
+    },
+    {
+      "id": "a3000001-0000-0000-0000-000000000005",
+      "name": "Prepare Files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "notes": "Converts non-empty base64 file payloads into binary items for Dropbox upload. Skips any file with no data.",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $('Webhook').first().json.body;\nconst leadData = $('Get Lead').first().json;\nconst folderPath = (leadData.fields ? leadData.fields['Dropbox Folder Path'] : leadData['Dropbox Folder Path']) || '_CoCard/_Leads/unknown';\n\nconst files = body.files || {};\nconst results = [];\n\nfor (const [key, file] of Object.entries(files)) {\n  if (!file || !file.data || !file.name) continue;\n  const buffer = Buffer.from(file.data, 'base64');\n  const binary = await this.helpers.prepareBinaryData(buffer, file.name);\n  results.push({\n    json: { dropboxPath: ('/' + folderPath + '/' + file.name).replace('//', '/') },\n    binary: { data: binary }\n  });\n}\n\nreturn results;"
+      }
+    },
+    {
+      "id": "a3000001-0000-0000-0000-000000000006",
+      "name": "Upload to Dropbox",
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "notes": "Uploads each file to the lead's Dropbox folder. Runs once per file item output by Prepare Files.",
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "path": "={{ $json.dropboxPath }}",
+        "binaryData": true,
+        "binaryPropertyName": "data"
+      },
+      "credentials": {
+        "dropboxOAuth2Api": { "id": "", "name": "Dropbox" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Get Lead", "type": "main", "index": 0 }]]
+    },
+    "Get Lead": {
+      "main": [[{ "node": "Update Lead Fields", "type": "main", "index": 0 }]]
+    },
+    "Update Lead Fields": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    },
+    "Respond": {
+      "main": [[{ "node": "Prepare Files", "type": "main", "index": 0 }]]
+    },
+    "Prepare Files": {
+      "main": [[{ "node": "Upload to Dropbox", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}
