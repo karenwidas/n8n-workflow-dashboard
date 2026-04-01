@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoCard — Merchant Application Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <style>
+    :root {
+      --navy:    #00304F;
+      --green:   #69932F;
+      --border:  #d0d7de;
+      --bg:      #f5f6f8;
+      --surface: #ffffff;
+      --text:    #1a2332;
+      --muted:   #6a8fa8;
+      --error:   #c0392b;
+      --error-bg:#fdf0ef;
+      --locked-bg: #fff8e1;
+      --locked-border: #f9a825;
+      --radius: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header { background: var(--navy); border-bottom: 3px solid var(--green); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { color: #fff; font-size: 18px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+    .warning { background: #fff8e1; border-left: 4px solid #f9a825; padding: 10px 20px; font-size: 13px; color: #5a4000; }
+
+    .container { max-width: 900px; margin: 28px auto; padding: 0 24px 80px; display: flex; flex-direction: column; gap: 20px; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .card-header { padding: 12px 20px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; }
+    .card-header span { color: var(--navy); }
+    .card-body { padding: 20px; }
+
+    .tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .tab { padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab.active { color: var(--navy); border-bottom-color: var(--green); }
+    .tab-pane { display: none; padding: 20px; }
+    .tab-pane.active { display: block; }
+
+    label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 5px; }
+
+    input[type="text"], input[type="password"], textarea {
+      width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 14px; font-family: inherit; background: #fff; color: var(--text);
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(105,147,47,.1); }
+    textarea { resize: vertical; min-height: 100px; font-family: monospace; font-size: 12px; }
+
+    .input-row { display: flex; gap: 8px; align-items: center; }
+    .input-row input { flex: 1; }
+
+    .file-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .file-upload { border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+    .file-upload:hover { border-color: var(--green); }
+    .file-upload input { display: none; }
+    .file-upload p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .file-upload .file-name { font-size: 12px; color: var(--green); font-weight: 700; margin-top: 6px; display: none; }
+
+    .btn { padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: opacity 0.15s; white-space: nowrap; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-sm      { padding: 5px 10px; font-size: 11px; }
+
+    .load-row { display: flex; justify-content: center; margin-top: 4px; }
+    .load-row button { padding: 11px 40px; font-size: 15px; }
+
+    .error-msg { background: var(--error-bg); border: 1px solid var(--error); border-radius: 6px; padding: 10px 16px; font-size: 13px; color: var(--error); display: none; margin-top: 12px; }
+
+    /* Application output */
+    #app-output { display: none; }
+
+    .app-meta { display: flex; gap: 24px; font-size: 12px; color: var(--muted); padding: 12px 20px; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .app-meta strong { color: var(--text); }
+
+    .section { border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section-title { padding: 12px 20px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+
+    .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0; }
+    .field-item { padding: 11px 20px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .field-item:nth-child(odd) { background: #fff; }
+    .field-item:nth-child(even) { background: var(--bg); }
+    .field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 3px; }
+    .field-value { font-size: 14px; color: var(--text); }
+    .field-value.empty { color: #bbb; font-style: italic; font-size: 12px; }
+    .field-value.full-width { grid-column: 1 / -1; }
+
+    .sensitive-row { display: flex; align-items: center; gap: 10px; padding: 11px 20px; border-bottom: 1px solid var(--border); background: var(--locked-bg); }
+    .sensitive-row .field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); min-width: 120px; margin: 0; }
+    .sensitive-value { flex: 1; font-size: 13px; font-family: monospace; color: #888; }
+    .sensitive-value.decrypted { color: var(--text); font-weight: 600; font-size: 14px; }
+    .sensitive-value.failed { color: var(--error); }
+    .copy-btn { padding: 4px 10px; font-size: 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; color: var(--muted); white-space: nowrap; }
+    .copy-btn:hover { border-color: var(--green); color: var(--green); }
+    .copy-btn.copied { background: var(--green); color: #fff; border-color: var(--green); }
+
+    .key-bar { display: flex; gap: 10px; align-items: center; padding: 12px 20px; background: #f0f4f8; border-bottom: 1px solid var(--border); }
+    .key-bar label { margin: 0; min-width: 80px; }
+    .key-bar input { flex: 1; max-width: 320px; }
+    .key-bar .hint { font-size: 12px; color: var(--muted); }
+
+    .print-bar { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); }
+
+    @media print {
+      header, .warning, #load-section, .print-bar, .key-bar { display: none !important; }
+      body { background: #fff; }
+      .container { margin: 0; padding: 0; max-width: 100%; }
+      .card { border: none; border-radius: 0; }
+      .sensitive-value { font-family: monospace; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>CoCard — Merchant Application Viewer</h1>
+    <p>View and decrypt submitted merchant applications</p>
+  </div>
+</header>
+
+<div class="warning">⚠️ <strong>Local use only.</strong> Open this file directly in your browser — do not host or share it.</div>
+
+<div class="container">
+
+  <!-- Load section -->
+  <div class="card" id="load-section">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('files')">Load from Dropbox Files</button>
+      <button class="tab" onclick="switchTab('paste')">Paste from n8n</button>
+    </div>
+
+    <!-- Tab: Files -->
+    <div id="tab-files" class="tab-pane active">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Download both files from the lead's Dropbox folder and upload them here.</p>
+      <div class="file-row">
+        <div>
+          <label>Application Data</label>
+          <div class="file-upload" onclick="document.getElementById('app-file').click()">
+            <input type="file" id="app-file" accept=".json" onchange="handleAppFile(this.files[0])">
+            <div>📄</div>
+            <p><strong>application-data.json</strong></p>
+            <p>All form fields (non-sensitive)</p>
+            <div class="file-name" id="app-file-name"></div>
+          </div>
+        </div>
+        <div>
+          <label>Sensitive Data</label>
+          <div class="file-upload" onclick="document.getElementById('sens-file').click()">
+            <input type="file" id="sens-file" accept=".json" onchange="handleSensFile(this.files[0])">
+            <div>🔒</div>
+            <p><strong>sensitive-data.json</strong></p>
+            <p>Encrypted EIN / DOBs / SSNs</p>
+            <div class="file-name" id="sens-file-name"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Paste -->
+    <div id="tab-paste" class="tab-pane">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">In n8n → Executions → click the run → click the <strong>Webhook</strong> node → copy the output JSON and paste it here.</p>
+      <label>Webhook Output JSON</label>
+      <textarea id="paste-json" placeholder='{ "body": { "leadId": "rec...", "legal_name": "...", "ein": "U2FsdGVk...", ... } }'></textarea>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <div class="load-row">
+        <button class="btn btn-primary" onclick="loadApplication()">Load Application</button>
+      </div>
+      <div class="error-msg" id="load-error"></div>
+    </div>
+  </div>
+
+  <!-- Application output -->
+  <div class="card" id="app-output">
+    <div class="app-meta">
+      <span>Lead ID: <strong id="meta-lead-id">—</strong></span>
+      <span>Submitted: <strong id="meta-submitted">—</strong></span>
+      <span>DBA: <strong id="meta-dba">—</strong></span>
+    </div>
+
+    <!-- Section: Business -->
+    <div class="section">
+      <div class="section-title">Business Information</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">Legal Name</div><div class="field-value" id="f-legal-name"></div></div>
+        <div class="field-item"><div class="field-label">DBA Name</div><div class="field-value" id="f-dba-name"></div></div>
+        <div class="field-item"><div class="field-label">Business Type</div><div class="field-value" id="f-business-type"></div></div>
+        <div class="field-item"><div class="field-label">State Incorporated</div><div class="field-value" id="f-state-inc"></div></div>
+        <div class="field-item"><div class="field-label">Incorporated Date</div><div class="field-value" id="f-inc-date"></div></div>
+        <div class="field-item"><div class="field-label">DBA Phone</div><div class="field-value" id="f-dba-phone"></div></div>
+      </div>
+      <div class="field-grid">
+        <div class="field-item" style="grid-column:1/-1"><div class="field-label">Products / Services</div><div class="field-value" id="f-products"></div></div>
+        <div class="field-item" style="grid-column:1/-1"><div class="field-label">Refund / Return Policy</div><div class="field-value" id="f-refund"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: Addresses -->
+    <div class="section">
+      <div class="section-title">Addresses</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">Legal Address</div><div class="field-value" id="f-legal-addr"></div></div>
+        <div class="field-item"><div class="field-label">Legal City</div><div class="field-value" id="f-legal-city"></div></div>
+        <div class="field-item"><div class="field-label">Legal State</div><div class="field-value" id="f-legal-state"></div></div>
+        <div class="field-item"><div class="field-label">Legal Zip</div><div class="field-value" id="f-legal-zip"></div></div>
+        <div class="field-item"><div class="field-label">DBA Address</div><div class="field-value" id="f-dba-addr"></div></div>
+        <div class="field-item"><div class="field-label">DBA City</div><div class="field-value" id="f-dba-city"></div></div>
+        <div class="field-item"><div class="field-label">DBA State</div><div class="field-value" id="f-dba-state"></div></div>
+        <div class="field-item"><div class="field-label">DBA Zip</div><div class="field-value" id="f-dba-zip"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: Contact -->
+    <div class="section">
+      <div class="section-title">Contact Information</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">First Name</div><div class="field-value" id="f-con-first"></div></div>
+        <div class="field-item"><div class="field-label">Last Name</div><div class="field-value" id="f-con-last"></div></div>
+        <div class="field-item"><div class="field-label">Suffix</div><div class="field-value" id="f-con-suffix"></div></div>
+        <div class="field-item"><div class="field-label">Phone</div><div class="field-value" id="f-con-phone"></div></div>
+        <div class="field-item"><div class="field-label">Email</div><div class="field-value" id="f-con-email"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: EIN (sensitive) -->
+    <div class="section">
+      <div class="section-title">Tax Information</div>
+      <div class="key-bar">
+        <label>Decrypt Key</label>
+        <input type="password" id="dec-key" value="CHANGE_ME_BEFORE_DEPLOY" autocomplete="off">
+        <button class="btn btn-ghost btn-sm" onclick="toggleKey()">Show</button>
+        <button class="btn btn-primary btn-sm" onclick="decryptAll()">Decrypt Sensitive Fields</button>
+        <span class="hint" id="decrypt-hint"></span>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">EIN / Tax ID</div>
+        <div class="sensitive-value" id="s-ein">—</div>
+        <button class="copy-btn" onclick="copyVal('s-ein', this)">Copy</button>
+      </div>
+    </div>
+
+    <!-- Section: Owner 1 -->
+    <div class="section">
+      <div class="section-title">Owner 1</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">First Name</div><div class="field-value" id="f-o1-first"></div></div>
+        <div class="field-item"><div class="field-label">Last Name</div><div class="field-value" id="f-o1-last"></div></div>
+        <div class="field-item"><div class="field-label">Suffix</div><div class="field-value" id="f-o1-suffix"></div></div>
+        <div class="field-item"><div class="field-label">Title</div><div class="field-value" id="f-o1-title"></div></div>
+        <div class="field-item"><div class="field-label">% Owned</div><div class="field-value" id="f-o1-pct"></div></div>
+        <div class="field-item"><div class="field-label">Citizenship</div><div class="field-value" id="f-o1-citizen"></div></div>
+        <div class="field-item"><div class="field-label">Phone</div><div class="field-value" id="f-o1-phone"></div></div>
+        <div class="field-item"><div class="field-label">Address</div><div class="field-value" id="f-o1-addr"></div></div>
+        <div class="field-item"><div class="field-label">City</div><div class="field-value" id="f-o1-city"></div></div>
+        <div class="field-item"><div class="field-label">State</div><div class="field-value" id="f-o1-state"></div></div>
+        <div class="field-item"><div class="field-label">Zip</div><div class="field-value" id="f-o1-zip"></div></div>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">Date of Birth</div>
+        <div class="sensitive-value" id="s-o1-dob">—</div>
+        <button class="copy-btn" onclick="copyVal('s-o1-dob', this)">Copy</button>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">SSN</div>
+        <div class="sensitive-value" id="s-o1-ssn">—</div>
+        <button class="copy-btn" onclick="copyVal('s-o1-ssn', this)">Copy</button>
+      </div>
+    </div>
+
+    <!-- Section: Owner 2 -->
+    <div class="section" id="section-o2" style="display:none">
+      <div class="section-title">Owner 2</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">First Name</div><div class="field-value" id="f-o2-first"></div></div>
+        <div class="field-item"><div class="field-label">Last Name</div><div class="field-value" id="f-o2-last"></div></div>
+        <div class="field-item"><div class="field-label">Suffix</div><div class="field-value" id="f-o2-suffix"></div></div>
+        <div class="field-item"><div class="field-label">Title</div><div class="field-value" id="f-o2-title"></div></div>
+        <div class="field-item"><div class="field-label">% Owned</div><div class="field-value" id="f-o2-pct"></div></div>
+        <div class="field-item"><div class="field-label">Citizenship</div><div class="field-value" id="f-o2-citizen"></div></div>
+        <div class="field-item"><div class="field-label">Phone</div><div class="field-value" id="f-o2-phone"></div></div>
+        <div class="field-item"><div class="field-label">Address</div><div class="field-value" id="f-o2-addr"></div></div>
+        <div class="field-item"><div class="field-label">City</div><div class="field-value" id="f-o2-city"></div></div>
+        <div class="field-item"><div class="field-label">State</div><div class="field-value" id="f-o2-state"></div></div>
+        <div class="field-item"><div class="field-label">Zip</div><div class="field-value" id="f-o2-zip"></div></div>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">Date of Birth</div>
+        <div class="sensitive-value" id="s-o2-dob">—</div>
+        <button class="copy-btn" onclick="copyVal('s-o2-dob', this)">Copy</button>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">SSN</div>
+        <div class="sensitive-value" id="s-o2-ssn">—</div>
+        <button class="copy-btn" onclick="copyVal('s-o2-ssn', this)">Copy</button>
+      </div>
+    </div>
+
+    <!-- Section: Owner 3 -->
+    <div class="section" id="section-o3" style="display:none">
+      <div class="section-title">Owner 3</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">First Name</div><div class="field-value" id="f-o3-first"></div></div>
+        <div class="field-item"><div class="field-label">Last Name</div><div class="field-value" id="f-o3-last"></div></div>
+        <div class="field-item"><div class="field-label">Suffix</div><div class="field-value" id="f-o3-suffix"></div></div>
+        <div class="field-item"><div class="field-label">Title</div><div class="field-value" id="f-o3-title"></div></div>
+        <div class="field-item"><div class="field-label">% Owned</div><div class="field-value" id="f-o3-pct"></div></div>
+        <div class="field-item"><div class="field-label">Citizenship</div><div class="field-value" id="f-o3-citizen"></div></div>
+        <div class="field-item"><div class="field-label">Phone</div><div class="field-value" id="f-o3-phone"></div></div>
+        <div class="field-item"><div class="field-label">Address</div><div class="field-value" id="f-o3-addr"></div></div>
+        <div class="field-item"><div class="field-label">City</div><div class="field-value" id="f-o3-city"></div></div>
+        <div class="field-item"><div class="field-label">State</div><div class="field-value" id="f-o3-state"></div></div>
+        <div class="field-item"><div class="field-label">Zip</div><div class="field-value" id="f-o3-zip"></div></div>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">Date of Birth</div>
+        <div class="sensitive-value" id="s-o3-dob">—</div>
+        <button class="copy-btn" onclick="copyVal('s-o3-dob', this)">Copy</button>
+      </div>
+      <div class="sensitive-row">
+        <div class="field-label">SSN</div>
+        <div class="sensitive-value" id="s-o3-ssn">—</div>
+        <button class="copy-btn" onclick="copyVal('s-o3-ssn', this)">Copy</button>
+      </div>
+    </div>
+
+    <!-- Section: Inventory -->
+    <div class="section">
+      <div class="section-title">Inventory</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">Owns Inventory</div><div class="field-value" id="f-owns-inv"></div></div>
+        <div class="field-item"><div class="field-label">Stored On-Site</div><div class="field-value" id="f-inv-onsite"></div></div>
+        <div class="field-item"><div class="field-label">Customer Charged When</div><div class="field-value" id="f-charged-when"></div></div>
+        <div class="field-item"><div class="field-label">Uses Fulfillment House</div><div class="field-value" id="f-fulfillment"></div></div>
+        <div class="field-item"><div class="field-label">Delivery 1–7 Days</div><div class="field-value" id="f-del-1-7"></div></div>
+        <div class="field-item"><div class="field-label">Delivery 8–14 Days</div><div class="field-value" id="f-del-8-14"></div></div>
+        <div class="field-item"><div class="field-label">Delivery 14+ Days</div><div class="field-value" id="f-del-14"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: Payment Processing -->
+    <div class="section">
+      <div class="section-title">Payment Processing</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">B2B %</div><div class="field-value" id="f-b2b"></div></div>
+        <div class="field-item"><div class="field-label">Public %</div><div class="field-value" id="f-public"></div></div>
+        <div class="field-item"><div class="field-label">Monthly CC Sales</div><div class="field-value" id="f-monthly-cc"></div></div>
+        <div class="field-item"><div class="field-label">Avg CC Transaction</div><div class="field-value" id="f-avg-cc"></div></div>
+        <div class="field-item"><div class="field-label">Transactions / Month</div><div class="field-value" id="f-txn-mo"></div></div>
+      </div>
+    </div>
+
+    <!-- Section: ACH -->
+    <div class="section" id="section-ach" style="display:none">
+      <div class="section-title">ACH Processing</div>
+      <div class="field-grid">
+        <div class="field-item"><div class="field-label">Monthly Check Sales</div><div class="field-value" id="f-ach-monthly"></div></div>
+        <div class="field-item"><div class="field-label">Checks / Month</div><div class="field-value" id="f-ach-checks"></div></div>
+        <div class="field-item"><div class="field-label">Avg Check Amount</div><div class="field-value" id="f-ach-avg"></div></div>
+        <div class="field-item"><div class="field-label">Max Single Check</div><div class="field-value" id="f-ach-max"></div></div>
+      </div>
+    </div>
+
+    <div class="print-bar">
+      <button class="btn btn-ghost" onclick="window.print()">🖨 Print / Save PDF</button>
+      <button class="btn btn-ghost" onclick="resetTool()">Load Another</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let appData   = null;
+let sensData  = null;
+let activeTab = 'files';
+
+// ── Tabs ───────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── File handling ──────────────────────────────────────────────
+function handleAppFile(file) {
+  if (!file) return;
+  readJson(file, data => {
+    appData = data;
+    showFileName('app-file-name', file.name);
+  });
+}
+function handleSensFile(file) {
+  if (!file) return;
+  readJson(file, data => {
+    sensData = data;
+    showFileName('sens-file-name', file.name);
+  });
+}
+function readJson(file, cb) {
+  const r = new FileReader();
+  r.onload = e => {
+    try { cb(JSON.parse(e.target.result)); }
+    catch { showError('Could not parse ' + file.name + ' — check it is valid JSON.'); }
+  };
+  r.readAsText(file);
+}
+function showFileName(id, name) {
+  const el = document.getElementById(id);
+  el.textContent = '✓ ' + name;
+  el.style.display = 'block';
+}
+
+// ── Load application ───────────────────────────────────────────
+function loadApplication() {
+  clearError();
+
+  let d = null;
+  let s = null;
+
+  if (activeTab === 'files') {
+    if (!appData) { showError('Upload application-data.json first.'); return; }
+    d = appData;
+    s = sensData; // optional
+  } else {
+    const raw = document.getElementById('paste-json').value.trim();
+    if (!raw) { showError('Paste the webhook output JSON first.'); return; }
+    try {
+      const parsed = JSON.parse(raw);
+      // Handle both raw body and wrapped { body: {...} } format
+      d = parsed.body || parsed;
+      // Extract sensitive fields from the same payload
+      s = {
+        leadId:     d.leadId,
+        ein:        d.ein        || '',
+        owner1_dob: d.owner1_dob || '',
+        owner1_ssn: d.owner1_ssn || '',
+        owner2_dob: d.owner2_dob || '',
+        owner2_ssn: d.owner2_ssn || '',
+        owner3_dob: d.owner3_dob || '',
+        owner3_ssn: d.owner3_ssn || ''
+      };
+    } catch { showError('Invalid JSON — check the pasted content.'); return; }
+  }
+
+  renderApplication(d, s);
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function renderApplication(d, s) {
+  // Meta
+  set('meta-lead-id',  d.leadId || '—');
+  set('meta-submitted', d.submitted ? new Date(d.submitted).toLocaleString() : '—');
+  set('meta-dba',      d.dba_name || '—');
+
+  // Business
+  fv('f-legal-name',   d.legal_name);
+  fv('f-dba-name',     d.dba_name);
+  fv('f-business-type',d.business_type);
+  fv('f-state-inc',    d.state_incorporated);
+  fv('f-inc-date',     d.incorporated_date);
+  fv('f-dba-phone',    d.dba_phone);
+  fv('f-products',     d.products_services);
+  fv('f-refund',       d.refund_policy);
+
+  // Addresses
+  fv('f-legal-addr',  d.legal_address_line1);
+  fv('f-legal-city',  d.legal_city);
+  fv('f-legal-state', d.legal_state);
+  fv('f-legal-zip',   d.legal_zip);
+  fv('f-dba-addr',    d.dba_address_line1);
+  fv('f-dba-city',    d.dba_city);
+  fv('f-dba-state',   d.dba_state);
+  fv('f-dba-zip',     d.dba_zip);
+
+  // Contact
+  fv('f-con-first',  d.contact_first);
+  fv('f-con-last',   d.contact_last);
+  fv('f-con-suffix', d.contact_suffix);
+  fv('f-con-phone',  d.contact_phone);
+  fv('f-con-email',  d.contact_email);
+
+  // Owner 1
+  fv('f-o1-first',  d.owner1_first);
+  fv('f-o1-last',   d.owner1_last);
+  fv('f-o1-suffix', d.owner1_suffix);
+  fv('f-o1-title',  d.owner1_title);
+  fv('f-o1-pct',    d.owner1_percent != null ? d.owner1_percent + '%' : null);
+  fv('f-o1-citizen',d.owner1_citizenship);
+  fv('f-o1-phone',  d.owner1_phone);
+  fv('f-o1-addr',   d.owner1_address_line1);
+  fv('f-o1-city',   d.owner1_city);
+  fv('f-o1-state',  d.owner1_state);
+  fv('f-o1-zip',    d.owner1_zip);
+
+  // Owner 2
+  if (d.has_additional_owners || d.owner2_first) {
+    document.getElementById('section-o2').style.display = 'block';
+    fv('f-o2-first',  d.owner2_first);
+    fv('f-o2-last',   d.owner2_last);
+    fv('f-o2-suffix', d.owner2_suffix);
+    fv('f-o2-title',  d.owner2_title);
+    fv('f-o2-pct',    d.owner2_percent != null ? d.owner2_percent + '%' : null);
+    fv('f-o2-citizen',d.owner2_citizenship);
+    fv('f-o2-phone',  d.owner2_phone);
+    fv('f-o2-addr',   d.owner2_address_line1);
+    fv('f-o2-city',   d.owner2_city);
+    fv('f-o2-state',  d.owner2_state);
+    fv('f-o2-zip',    d.owner2_zip);
+  }
+
+  // Owner 3
+  if (d.owner3_first) {
+    document.getElementById('section-o3').style.display = 'block';
+    fv('f-o3-first',  d.owner3_first);
+    fv('f-o3-last',   d.owner3_last);
+    fv('f-o3-suffix', d.owner3_suffix);
+    fv('f-o3-title',  d.owner3_title);
+    fv('f-o3-pct',    d.owner3_percent != null ? d.owner3_percent + '%' : null);
+    fv('f-o3-citizen',d.owner3_citizenship);
+    fv('f-o3-phone',  d.owner3_phone);
+    fv('f-o3-addr',   d.owner3_address_line1);
+    fv('f-o3-city',   d.owner3_city);
+    fv('f-o3-state',  d.owner3_state);
+    fv('f-o3-zip',    d.owner3_zip);
+  }
+
+  // Sensitive placeholders
+  if (s) {
+    window._sensData = s;
+    sv('s-ein',    s.ein,        true);
+    sv('s-o1-dob', s.owner1_dob, true);
+    sv('s-o1-ssn', s.owner1_ssn, true);
+    sv('s-o2-dob', s.owner2_dob, true);
+    sv('s-o2-ssn', s.owner2_ssn, true);
+    sv('s-o3-dob', s.owner3_dob, true);
+    sv('s-o3-ssn', s.owner3_ssn, true);
+  }
+
+  // Inventory
+  fv('f-owns-inv',    d.owns_inventory);
+  fv('f-inv-onsite',  d.inventory_on_site);
+  fv('f-charged-when',d.customer_charged_when);
+  fv('f-fulfillment', d.uses_fulfillment_house);
+  fv('f-del-1-7',     d.delivery_1to7_pct  != null ? d.delivery_1to7_pct  + '%' : null);
+  fv('f-del-8-14',    d.delivery_8to14_pct != null ? d.delivery_8to14_pct + '%' : null);
+  fv('f-del-14',      d.delivery_14plus_pct!= null ? d.delivery_14plus_pct+ '%' : null);
+
+  // Payment
+  fv('f-b2b',      d.b2b_pct    != null ? d.b2b_pct    + '%' : null);
+  fv('f-public',   d.public_pct != null ? d.public_pct + '%' : null);
+  fv('f-monthly-cc',d.monthly_cc_sales      != null ? '$' + Number(d.monthly_cc_sales).toLocaleString()    : null);
+  fv('f-avg-cc',    d.avg_cc_transaction    != null ? '$' + Number(d.avg_cc_transaction).toLocaleString()  : null);
+  fv('f-txn-mo',    d.transactions_per_month!= null ? Number(d.transactions_per_month).toLocaleString()    : null);
+
+  // ACH
+  if (d.ach_requested) {
+    document.getElementById('section-ach').style.display = 'block';
+    fv('f-ach-monthly', d.monthly_check_sales != null ? '$' + Number(d.monthly_check_sales).toLocaleString() : null);
+    fv('f-ach-checks',  d.checks_per_month);
+    fv('f-ach-avg',     d.avg_check_amount != null ? '$' + Number(d.avg_check_amount).toLocaleString() : null);
+    fv('f-ach-max',     d.max_check_amount != null ? '$' + Number(d.max_check_amount).toLocaleString() : null);
+  }
+
+  document.getElementById('app-output').style.display = 'block';
+  document.getElementById('app-output').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Decrypt ────────────────────────────────────────────────────
+function decryptAll() {
+  const key = document.getElementById('dec-key').value.trim();
+  if (!key) { document.getElementById('decrypt-hint').textContent = 'Enter key first'; return; }
+  if (!window._sensData) { document.getElementById('decrypt-hint').textContent = 'No sensitive data loaded'; return; }
+
+  const s = window._sensData;
+  sv('s-ein',    decrypt(s.ein,        key), false);
+  sv('s-o1-dob', decrypt(s.owner1_dob, key), false);
+  sv('s-o1-ssn', decrypt(s.owner1_ssn, key), false);
+  sv('s-o2-dob', decrypt(s.owner2_dob, key), false);
+  sv('s-o2-ssn', decrypt(s.owner2_ssn, key), false);
+  sv('s-o3-dob', decrypt(s.owner3_dob, key), false);
+  sv('s-o3-ssn', decrypt(s.owner3_ssn, key), false);
+
+  document.getElementById('decrypt-hint').textContent = '✓ Decrypted';
+}
+
+function decrypt(value, key) {
+  if (!value) return null;
+  try {
+    const bytes = CryptoJS.AES.decrypt(value, key);
+    return bytes.toString(CryptoJS.enc.Utf8) || null;
+  } catch { return null; }
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function fv(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (value === null || value === undefined || value === '') {
+    el.textContent = '—';
+    el.className = 'field-value empty';
+  } else {
+    el.textContent = value;
+    el.className = 'field-value';
+  }
+}
+
+function sv(id, value, encrypted) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!value) {
+    el.textContent = 'Not provided';
+    el.className = 'sensitive-value empty';
+  } else if (encrypted) {
+    el.textContent = '🔒 Encrypted — click Decrypt';
+    el.className = 'sensitive-value';
+    el.dataset.enc = value;
+  } else if (value === null) {
+    el.textContent = 'Decryption failed — wrong key?';
+    el.className = 'sensitive-value failed';
+  } else {
+    el.textContent = value;
+    el.className = 'sensitive-value decrypted';
+  }
+}
+
+function set(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function copyVal(id, btn) {
+  const el = document.getElementById(id);
+  const text = el.textContent;
+  if (!text || text === '—' || text.startsWith('🔒') || text.includes('failed') || text === 'Not provided') return;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function toggleKey() {
+  const input = document.getElementById('dec-key');
+  const btn = input.nextElementSibling;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? 'Show' : 'Hide';
+}
+
+function resetTool() {
+  appData = null; sensData = null;
+  document.getElementById('app-output').style.display = 'none';
+  document.getElementById('app-file-name').style.display = 'none';
+  document.getElementById('sens-file-name').style.display = 'none';
+  document.getElementById('paste-json').value = '';
+  document.getElementById('decrypt-hint').textContent = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('load-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearError() {
+  document.getElementById('load-error').style.display = 'none';
+}
+</script>
+</body>
+</html>
