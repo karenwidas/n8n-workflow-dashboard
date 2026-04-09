@@ -1,9 +1,10 @@
 {
   "name": "SignWell — Send for Signature",
+  "description": "Triggered by the dashboard Send for Signature form. Fetches merchant and contact data from Airtable, builds a pre-filled SignWell document from the selected template, sends it to the contact for e-signature, and creates a tracking record in the Document Sends table. Banking/payment data passes through only — never stored.",
   "nodes": [
     {
       "id": "sfs-0001",
-      "name": "Webhook",
+      "name": "Listen — Dashboard Submits Form",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [250, 300],
@@ -24,7 +25,7 @@
         "operation": "get",
         "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
         "table": { "__rl": true, "value": "tblPEGS3d1QsE0KY1", "mode": "id" },
-        "id": "={{ $('Webhook').item.json.body.merchant_id }}",
+        "id": "={{ $('Listen — Dashboard Submits Form').item.json.body.merchant_id }}",
         "options": {}
       },
       "credentials": {
@@ -41,7 +42,7 @@
         "operation": "get",
         "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
         "table": { "__rl": true, "value": "tblR80p5dAGRBx68K", "mode": "id" },
-        "id": "={{ $('Webhook').item.json.body.contact_id }}",
+        "id": "={{ $('Listen — Dashboard Submits Form').item.json.body.contact_id }}",
         "options": {}
       },
       "credentials": {
@@ -55,7 +56,7 @@
       "typeVersion": 2,
       "position": [650, 300],
       "parameters": {
-        "jsCode": "const body      = $('Webhook').item.json.body;\nconst company   = $('Get Company from Airtable').item.json.fields;\nconst contact   = $('Get Contact from Airtable').item.json.fields;\n\nconst pm = body.payment_method;\nconst freq = body.payment_frequency;\nconst force = body.force_payment;\nconst part = body.participant_type;\n\nconst payload = {\n  test_mode: false,\n  template_ids: [body.template_id],\n  subject: 'Please sign: ' + (company['DBA Name'] || company['Legal Name'] || ''),\n  message: 'Please review and sign the attached document.',\n  recipients: [\n    {\n      id: '1',\n      name: contact['Full Name'] || body.contact_name,\n      email: contact['Email'] || body.contact_email\n    }\n  ],\n  fields: [\n    { api_id: 'Customer_Name',       value: contact['Full Name']          || '' },\n    { api_id: 'Customer_Email',      value: contact['Email']              || '' },\n    { api_id: 'Company_Name',        value: company['DBA Name']           || '' },\n    { api_id: 'Customer_Phone',      value: contact['Phone']              || '' },\n    { api_id: 'Customer_Address',    value: company['DBA Street']         || '' },\n    { api_id: 'Customer_City',       value: company['DBA City']           || '' },\n    { api_id: 'Customer_State',      value: company['DBA State']          || '' },\n    { api_id: 'Customer_Zip',        value: company['DBA Zip Code']       || '' },\n    { api_id: 'Bank_Name',           value: body.bank_name                || '' },\n    { api_id: 'Routing_Number',      value: body.routing_number           || '' },\n    { api_id: 'Account_Number',      value: body.account_number           || '' },\n    { api_id: 'Payment_Start_Date',  value: body.payment_start_date       || '' },\n    { api_id: 'Payment_Amount',      value: String(body.payment_amount)   || '' },\n    { api_id: 'Checking',            value: pm === 'Checking'    ? 'true' : 'false' },\n    { api_id: 'Savings',             value: pm === 'Savings'     ? 'true' : 'false' },\n    { api_id: 'Monthly',             value: freq === 'Monthly'   ? 'true' : 'false' },\n    { api_id: 'Quarterly',           value: freq === 'Quarterly' ? 'true' : 'false' },\n    { api_id: 'Annually',            value: freq === 'Annually'  ? 'true' : 'false' },\n    { api_id: 'Yes',                 value: force === 'Yes'      ? 'true' : 'false' },\n    { api_id: 'No',                  value: force === 'No'       ? 'true' : 'false' },\n    { api_id: 'New_Participant',     value: part === 'New Participant'        ? 'true' : 'false' },\n    { api_id: 'Change_Participant',  value: part === 'Change to Participant'  ? 'true' : 'false' }\n  ]\n};\n\nreturn [{ json: payload }];"
+        "jsCode": "const body      = $('Listen — Dashboard Submits Form').item.json.body;\nconst company   = $('Get Company from Airtable').item.json.fields;\nconst contact   = $('Get Contact from Airtable').item.json.fields;\n\nconst pm = body.payment_method;\nconst freq = body.payment_frequency;\nconst force = body.force_payment;\nconst part = body.participant_type;\n\nconst payload = {\n  test_mode: false,\n  template_ids: [body.template_id],\n  subject: 'Please sign: ' + (company['DBA Name'] || company['Legal Name'] || ''),\n  message: 'Please review and sign the attached document.',\n  recipients: [\n    {\n      id: '1',\n      name: contact['Full Name'] || body.contact_name,\n      email: contact['Email'] || body.contact_email\n    }\n  ],\n  fields: [\n    { api_id: 'Customer_Name',       value: contact['Full Name']          || '' },\n    { api_id: 'Customer_Email',      value: contact['Email']              || '' },\n    { api_id: 'Company_Name',        value: company['DBA Name']           || '' },\n    { api_id: 'Customer_Phone',      value: contact['Phone']              || '' },\n    { api_id: 'Customer_Address',    value: company['DBA Street']         || '' },\n    { api_id: 'Customer_City',       value: company['DBA City']           || '' },\n    { api_id: 'Customer_State',      value: company['DBA State']          || '' },\n    { api_id: 'Customer_Zip',        value: company['DBA Zip Code']       || '' },\n    { api_id: 'Bank_Name',           value: body.bank_name                || '' },\n    { api_id: 'Routing_Number',      value: body.routing_number           || '' },\n    { api_id: 'Account_Number',      value: body.account_number           || '' },\n    { api_id: 'Payment_Start_Date',  value: body.payment_start_date       || '' },\n    { api_id: 'Payment_Amount',      value: String(body.payment_amount)   || '' },\n    { api_id: 'Checking',            value: pm === 'Checking'    ? 'true' : 'false' },\n    { api_id: 'Savings',             value: pm === 'Savings'     ? 'true' : 'false' },\n    { api_id: 'Monthly',             value: freq === 'Monthly'   ? 'true' : 'false' },\n    { api_id: 'Quarterly',           value: freq === 'Quarterly' ? 'true' : 'false' },\n    { api_id: 'Annually',            value: freq === 'Annually'  ? 'true' : 'false' },\n    { api_id: 'Yes',                 value: force === 'Yes'      ? 'true' : 'false' },\n    { api_id: 'No',                  value: force === 'No'       ? 'true' : 'false' },\n    { api_id: 'New_Participant',     value: part === 'New Participant'        ? 'true' : 'false' },\n    { api_id: 'Change_Participant',  value: part === 'Change to Participant'  ? 'true' : 'false' }\n  ]\n};\n\nreturn [{ json: payload }];"
       }
     },
     {
@@ -92,12 +93,12 @@
           "mappingMode": "defineBelow",
           "value": {
             "Document Name": "={{ $('Get Company from Airtable').item.json.fields['DBA Name'] || $('Get Company from Airtable').item.json.fields['Legal Name'] }}",
-            "Template": "={{ $('Webhook').item.json.body.template_name }}",
+            "Template": "={{ $('Listen — Dashboard Submits Form').item.json.body.template_name }}",
             "Status": "Sent",
             "SignWell Document ID": "={{ $('Send to SignWell').item.json.id }}",
             "Sent Date": "={{ new Date().toISOString().split('T')[0] }}",
-            "Customer": ["={{ $('Webhook').item.json.body.merchant_id }}"],
-            "Send To Contact": ["={{ $('Webhook').item.json.body.contact_id }}"]
+            "Customer": ["={{ $('Listen — Dashboard Submits Form').item.json.body.merchant_id }}"],
+            "Send To Contact": ["={{ $('Listen — Dashboard Submits Form').item.json.body.contact_id }}"]
           },
           "matchingColumns": [],
           "schema": []
@@ -110,7 +111,7 @@
     },
     {
       "id": "sfs-0007",
-      "name": "Respond",
+      "name": "Confirm Send to Dashboard",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [1250, 300],
@@ -128,7 +129,7 @@
     }
   ],
   "connections": {
-    "Webhook": {
+    "Listen — Dashboard Submits Form": {
       "main": [
         [
           { "node": "Get Company from Airtable", "type": "main", "index": 0 },
@@ -149,7 +150,7 @@
       "main": [[{ "node": "Create Document Sends Record", "type": "main", "index": 0 }]]
     },
     "Create Document Sends Record": {
-      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Confirm Send to Dashboard", "type": "main", "index": 0 }]]
     }
   },
   "active": false,

@@ -1,9 +1,10 @@
 {
   "name": "SignWell — Get Templates",
+  "description": "Called by the Send for Signature modal on the dashboard. Fetches all active templates from SignWell and returns a simple id+name list to populate the template dropdown. Triggered every time the modal opens.",
   "nodes": [
     {
       "id": "sw-tpl-0001",
-      "name": "Webhook",
+      "name": "Listen — Dashboard Requests Templates",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [250, 300],
@@ -43,7 +44,7 @@
     },
     {
       "id": "sw-tpl-0004",
-      "name": "Respond",
+      "name": "Return Templates to Dashboard",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [850, 300],
@@ -61,14 +62,14 @@
     }
   ],
   "connections": {
-    "Webhook": {
+    "Listen — Dashboard Requests Templates": {
       "main": [[{ "node": "Get Templates from SignWell", "type": "main", "index": 0 }]]
     },
     "Get Templates from SignWell": {
       "main": [[{ "node": "Reshape to id+name Array", "type": "main", "index": 0 }]]
     },
     "Reshape to id+name Array": {
-      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Return Templates to Dashboard", "type": "main", "index": 0 }]]
     }
   },
   "active": false,

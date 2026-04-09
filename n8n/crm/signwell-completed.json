@@ -1,9 +1,10 @@
 {
   "name": "SignWell — Document Completed",
+  "description": "Receives event callbacks from SignWell when any document activity occurs. Filters for completed documents only, finds the matching Document Sends record in Airtable using the SignWell document ID, fetches the signed PDF URL, and updates the record with Signed status, signed date, and PDF link.",
   "nodes": [
     {
       "id": "swc-0001",
-      "name": "Webhook",
+      "name": "Listen — SignWell Event Callback",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [250, 300],
@@ -46,7 +47,7 @@
         "operation": "list",
         "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
         "table": { "__rl": true, "value": "tblEeAZZqKvVCJiDq", "mode": "id" },
-        "filterByFormula": "={{ `{SignWell Document ID}='${$('Webhook').item.json.body.data.id}'` }}",
+        "filterByFormula": "={{ `{SignWell Document ID}='${$('Listen — SignWell Event Callback').item.json.body.data.id}'` }}",
         "options": { "fields": ["SignWell Document ID"] }
       },
       "credentials": {
@@ -61,7 +62,7 @@
       "position": [850, 300],
       "parameters": {
         "method": "GET",
-        "url": "={{ `https://www.signwell.com/api/v1/documents/${$('Webhook').item.json.body.data.id}` }}",
+        "url": "={{ `https://www.signwell.com/api/v1/documents/${$('Listen — SignWell Event Callback').item.json.body.data.id}` }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -99,7 +100,7 @@
     },
     {
       "id": "swc-0006",
-      "name": "Respond",
+      "name": "Acknowledge SignWell",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [1250, 300],
@@ -110,7 +111,7 @@
     }
   ],
   "connections": {
-    "Webhook": {
+    "Listen — SignWell Event Callback": {
       "main": [[{ "node": "Filter — Completed Only", "type": "main", "index": 0 }]]
     },
     "Filter — Completed Only": {
@@ -123,7 +124,7 @@
       "main": [[{ "node": "Update Document Sends Record", "type": "main", "index": 0 }]]
     },
     "Update Document Sends Record": {
-      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Acknowledge SignWell", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
