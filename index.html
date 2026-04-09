@@ -965,18 +965,9 @@ async function loadSigContacts(companyId) {
     return;
   }
   try {
-    // Step 1: get the company record to read its linked contact IDs
-    const companyUrl = `https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblPEGS3d1QsE0KY1/${companyId}` +
-      `?fields[]=Contact`;
-    const companyRes = await fetch(companyUrl, { headers: { Authorization: `Bearer ${apiKey}` } });
-    const companyData = await companyRes.json();
-    const contactIds = companyData.fields?.Contact || [];
-    if (!contactIds.length) {
-      contactSel.innerHTML = '<option value="">No contacts found</option>';
-      return;
-    }
-    // Step 2: fetch those contacts by record ID
-    const formula = encodeURIComponent(`OR(${contactIds.map(id => `RECORD_ID()="${id}"`).join(',')})`);
+    // Filter contacts by merchant name via ARRAYJOIN on the linked Company field
+    const safeName = sigMerchantName.replace(/"/g, '');
+    const formula = encodeURIComponent(`FIND("${safeName}", ARRAYJOIN({Company}))`);
     const url = `https://api.airtable.com/v0/apppYzklXP1tsbWnF/${CONTACTS_TABLE_ID}` +
       `?filterByFormula=${formula}` +
       `&fields[]=${encodeURIComponent(CONTACTS_NAME_FIELD_ID)}` +
