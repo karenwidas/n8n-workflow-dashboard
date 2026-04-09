@@ -754,9 +754,8 @@
       <!-- Template -->
       <div>
         <div class="sig-section-label">Document Template</div>
-        <select id="sig-template" class="sig-select" style="margin-top:8px;">
-          <option value="">— select template —</option>
-          <option value="77fa648e-95b5-47d5-a162-979bf88139b6">EFT Authorization</option>
+        <select id="sig-template" class="sig-select" style="margin-top:8px;" disabled>
+          <option value="">— loading templates… —</option>
         </select>
       </div>
 
@@ -842,6 +841,7 @@
 <script>
 // ── Send for Signature ───────────────────────────────────────
 const SIG_WEBHOOK_URL = 'https://karenwidas.app.n8n.cloud/webhook/send-for-signature';
+const SIG_TEMPLATES_URL = 'https://karenwidas.app.n8n.cloud/webhook/signwell-templates';
 const CONTACTS_TABLE_ID = 'tblR80p5dAGRBx68K';
 const CONTACTS_NAME_FIELD_ID = 'fldXW2KwH9nKHFf7E'; // Full Name (formula)
 const CONTACTS_EMAIL_FIELD_ID = 'fldNMGwxfHZaAA0zQ';
@@ -855,6 +855,27 @@ let sigContacts = [];
 function openSigModal() {
   document.getElementById('sig-overlay').classList.add('open');
   document.getElementById('sig-merchant-search').focus();
+  loadSigTemplates();
+}
+
+async function loadSigTemplates() {
+  const sel = document.getElementById('sig-template');
+  sel.innerHTML = '<option value="">— loading… —</option>';
+  sel.disabled = true;
+  try {
+    const res = await fetch(SIG_TEMPLATES_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.length) {
+      sel.innerHTML = '<option value="">No templates found</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— select template —</option>' +
+      data.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    sel.disabled = false;
+  } catch (e) {
+    sel.innerHTML = '<option value="">Error loading templates</option>';
+  }
 }
 
 function closeSigModal() {
