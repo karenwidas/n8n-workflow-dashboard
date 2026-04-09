@@ -38,7 +38,7 @@
       "typeVersion": 2,
       "position": [650, 300],
       "parameters": {
-        "jsCode": "const templates = $input.all()[0].json.document_templates || [];\nreturn templates.map(t => ({ json: { id: t.id, name: t.name } }));"
+        "jsCode": "const templates = $input.all()[0].json.templates || [];\nreturn templates.map(t => ({ json: { id: t.id, name: t.name } }));"
       }
     },
     {
