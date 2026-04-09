@@ -1,0 +1,158 @@
+{
+  "name": "SignWell — Send for Signature",
+  "nodes": [
+    {
+      "id": "sfs-0001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-for-signature",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "sfs-0002",
+      "name": "Get Company from Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "parameters": {
+        "operation": "get",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblPEGS3d1QsE0KY1", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.merchant_id }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "sfs-0003",
+      "name": "Get Contact from Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [450, 480],
+      "parameters": {
+        "operation": "get",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblR80p5dAGRBx68K", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.contact_id }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "sfs-0004",
+      "name": "Build SignWell Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "const body      = $('Webhook').item.json.body;\nconst company   = $('Get Company from Airtable').item.json.fields;\nconst contact   = $('Get Contact from Airtable').item.json.fields;\n\nconst pm = body.payment_method;\nconst freq = body.payment_frequency;\nconst force = body.force_payment;\nconst part = body.participant_type;\n\nconst payload = {\n  test_mode: false,\n  template_ids: [body.template_id],\n  subject: 'Please sign: ' + (company['DBA Name'] || company['Legal Name'] || ''),\n  message: 'Please review and sign the attached document.',\n  recipients: [\n    {\n      id: '1',\n      name: contact['Full Name'] || body.contact_name,\n      email: contact['Email'] || body.contact_email\n    }\n  ],\n  fields: [\n    { api_id: 'customer_name',       value: contact['Full Name']          || '' },\n    { api_id: 'email',               value: contact['Email']              || '' },\n    { api_id: 'company_name',        value: company['DBA Name']           || '' },\n    { api_id: 'telephone',           value: contact['Phone']              || '' },\n    { api_id: 'street_address',      value: company['DBA Street']         || '' },\n    { api_id: 'city',                value: company['DBA City']           || '' },\n    { api_id: 'state',               value: company['DBA State']          || '' },\n    { api_id: 'zip',                 value: company['DBA Zip Code']       || '' },\n    { api_id: 'bank_name',           value: body.bank_name                || '' },\n    { api_id: 'routing_number',      value: body.routing_number           || '' },\n    { api_id: 'account_number',      value: body.account_number           || '' },\n    { api_id: 'payment_start_date',  value: body.payment_start_date       || '' },\n    { api_id: 'payment_amount',      value: String(body.payment_amount)   || '' },\n    { api_id: 'Checking',            value: pm === 'Checking'    ? 'true' : 'false' },\n    { api_id: 'Savings',             value: pm === 'Savings'     ? 'true' : 'false' },\n    { api_id: 'Monthly',             value: freq === 'Monthly'   ? 'true' : 'false' },\n    { api_id: 'Quarterly',           value: freq === 'Quarterly' ? 'true' : 'false' },\n    { api_id: 'Annually',            value: freq === 'Annually'  ? 'true' : 'false' },\n    { api_id: 'Yes',                 value: force === 'Yes'      ? 'true' : 'false' },\n    { api_id: 'No',                  value: force === 'No'       ? 'true' : 'false' },\n    { api_id: 'New_Participant',     value: part === 'New Participant'        ? 'true' : 'false' },\n    { api_id: 'Change_Participant',  value: part === 'Change to Participant'  ? 'true' : 'false' }\n  ]\n};\n\nreturn [{ json: payload }];"
+      }
+    },
+    {
+      "id": "sfs-0005",
+      "name": "Send to SignWell",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.signwell.com/v1/documents",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "SignWell API" }
+      }
+    },
+    {
+      "id": "sfs-0006",
+      "name": "Create Document Sends Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "parameters": {
+        "operation": "create",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblEeAZZqKvVCJiDq", "mode": "id" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Document Name": "={{ $('Get Company from Airtable').item.json.fields['DBA Name'] || $('Get Company from Airtable').item.json.fields['Legal Name'] }}",
+            "Template": "={{ $('Webhook').item.json.body.template_name }}",
+            "Status": "Sent",
+            "SignWell Document ID": "={{ $('Send to SignWell').item.json.id }}",
+            "Sent Date": "={{ new Date().toISOString().split('T')[0] }}",
+            "Customer": ["={{ $('Webhook').item.json.body.merchant_id }}"],
+            "Send To Contact": ["={{ $('Webhook').item.json.body.contact_id }}"]
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "sfs-0007",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, document_id: $('Send to SignWell').item.json.id }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          { "node": "Get Company from Airtable", "type": "main", "index": 0 },
+          { "node": "Get Contact from Airtable", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Company from Airtable": {
+      "main": [[{ "node": "Build SignWell Payload", "type": "main", "index": 0 }]]
+    },
+    "Get Contact from Airtable": {
+      "main": [[{ "node": "Build SignWell Payload", "type": "main", "index": 0 }]]
+    },
+    "Build SignWell Payload": {
+      "main": [[{ "node": "Send to SignWell", "type": "main", "index": 0 }]]
+    },
+    "Send to SignWell": {
+      "main": [[{ "node": "Create Document Sends Record", "type": "main", "index": 0 }]]
+    },
+    "Create Document Sends Record": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}

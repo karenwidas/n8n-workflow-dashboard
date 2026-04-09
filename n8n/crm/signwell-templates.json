@@ -1,0 +1,77 @@
+{
+  "name": "SignWell — Get Templates",
+  "nodes": [
+    {
+      "id": "sw-tpl-0001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "signwell-templates",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "sw-tpl-0002",
+      "name": "Get Templates from SignWell",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.signwell.com/v1/document_templates",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "SignWell API" }
+      }
+    },
+    {
+      "id": "sw-tpl-0003",
+      "name": "Reshape to id+name Array",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "const templates = $input.all()[0].json.document_templates || [];\nreturn templates.map(t => ({ json: { id: t.id, name: t.name } }));"
+      }
+    },
+    {
+      "id": "sw-tpl-0004",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Get Templates from SignWell", "type": "main", "index": 0 }]]
+    },
+    "Get Templates from SignWell": {
+      "main": [[{ "node": "Reshape to id+name Array", "type": "main", "index": 0 }]]
+    },
+    "Reshape to id+name Array": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}

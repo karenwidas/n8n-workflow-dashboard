@@ -1,0 +1,132 @@
+{
+  "name": "SignWell — Document Completed",
+  "nodes": [
+    {
+      "id": "swc-0001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "signwell-completed",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "swc-0002",
+      "name": "Filter — Completed Only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.body.event_type }}",
+              "rightValue": "document_completed",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "swc-0003",
+      "name": "Find Document Sends Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "operation": "list",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblEeAZZqKvVCJiDq", "mode": "id" },
+        "filterByFormula": "={{ `{SignWell Document ID}='${$('Webhook').item.json.body.data.id}'` }}",
+        "options": { "fields": ["SignWell Document ID"] }
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "swc-0004",
+      "name": "Get Signed PDF URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ `https://api.signwell.com/v1/documents/${$('Webhook').item.json.body.data.id}` }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "SignWell API" }
+      }
+    },
+    {
+      "id": "swc-0005",
+      "name": "Update Document Sends Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "parameters": {
+        "operation": "update",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblEeAZZqKvVCJiDq", "mode": "id" },
+        "id": "={{ $('Find Document Sends Record').item.json.id }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Signed",
+            "Signed Date": "={{ new Date().toISOString().split('T')[0] }}",
+            "Signed PDF URL": "={{ $('Get Signed PDF URL').item.json.completed_pdf_url || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
+      "id": "swc-0006",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Filter — Completed Only", "type": "main", "index": 0 }]]
+    },
+    "Filter — Completed Only": {
+      "main": [[{ "node": "Find Document Sends Record", "type": "main", "index": 0 }]]
+    },
+    "Find Document Sends Record": {
+      "main": [[{ "node": "Get Signed PDF URL", "type": "main", "index": 0 }]]
+    },
+    "Get Signed PDF URL": {
+      "main": [[{ "node": "Update Document Sends Record", "type": "main", "index": 0 }]]
+    },
+    "Update Document Sends Record": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "" }
+}
