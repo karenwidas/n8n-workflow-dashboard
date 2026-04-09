@@ -61,7 +61,7 @@
       "position": [850, 300],
       "parameters": {
         "method": "GET",
-        "url": "={{ `https://api.signwell.com/v1/documents/${$('Webhook').item.json.body.data.id}` }}",
+        "url": "={{ `https://www.signwell.com/api/v1/documents/${$('Webhook').item.json.body.data.id}` }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}

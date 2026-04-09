@@ -22,7 +22,7 @@
       "position": [450, 300],
       "parameters": {
         "method": "GET",
-        "url": "https://api.signwell.com/v1/document_templates",
+        "url": "https://www.signwell.com/api/v1/document_templates",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}

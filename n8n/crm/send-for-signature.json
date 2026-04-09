@@ -66,7 +66,7 @@
       "position": [850, 300],
       "parameters": {
         "method": "POST",
-        "url": "https://api.signwell.com/v1/documents",
+        "url": "https://www.signwell.com/api/v1/documents",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
