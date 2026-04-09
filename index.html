@@ -967,10 +967,10 @@ async function loadSigContacts(companyId) {
   try {
     // Step 1: get the company record to read its linked contact IDs
     const companyUrl = `https://api.airtable.com/v0/apppYzklXP1tsbWnF/tblPEGS3d1QsE0KY1/${companyId}` +
-      `?fields[]=fldMHDMokVaad49pE&returnFieldsByFieldId=true`;
+      `?fields[]=Contact`;
     const companyRes = await fetch(companyUrl, { headers: { Authorization: `Bearer ${apiKey}` } });
     const companyData = await companyRes.json();
-    const contactIds = companyData.fields?.fldMHDMokVaad49pE || [];
+    const contactIds = companyData.fields?.Contact || [];
     if (!contactIds.length) {
       contactSel.innerHTML = '<option value="">No contacts found</option>';
       return;
