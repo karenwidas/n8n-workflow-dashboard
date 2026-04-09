@@ -471,6 +471,72 @@
   }
   .obsidian-feedback.success { background: var(--obsidian-light); color: var(--obsidian-accent); display: block; }
   .obsidian-feedback.error { background: #fdecea; color: var(--error); display: block; }
+
+  /* ── Send for Signature Modal ───────────────────────────────── */
+  .sig-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,48,79,0.45); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .sig-overlay.open { display: flex; }
+  .sig-modal {
+    background: var(--surface); border-radius: 12px;
+    box-shadow: var(--shadow-md); width: 540px; max-width: 96vw;
+    max-height: 90vh; overflow-y: auto;
+    border-top: 4px solid var(--cocard-blue);
+  }
+  .sig-modal-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sig-modal-header h2 {
+    font-size: 15px; font-weight: 700; color: var(--cocard-blue);
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .sig-close {
+    background: none; border: none; font-size: 20px;
+    color: var(--muted); cursor: pointer; line-height: 1;
+  }
+  .sig-close:hover { color: var(--text); }
+  .sig-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .sig-section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-bottom: -6px;
+  }
+  .sig-row { display: grid; gap: 10px; }
+  .sig-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .sig-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .sig-label {
+    font-size: 11px; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    display: block; margin-bottom: 4px;
+  }
+  .sig-input, .sig-select {
+    width: 100%; padding: 8px 10px; border-radius: 6px;
+    border: 1.5px solid var(--form-border); font-size: 13px;
+    font-family: Arial, sans-serif; color: var(--text);
+    background: var(--surface); transition: border-color 0.15s;
+  }
+  .sig-input:focus, .sig-select:focus {
+    outline: none; border-color: var(--cocard-blue);
+  }
+  .sig-footer { padding: 14px 22px 18px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
+  .sig-submit {
+    flex: 1; padding: 10px 16px; background: var(--cocard-blue);
+    border: none; color: #fff; font-family: Arial, sans-serif;
+    font-size: 13px; font-weight: 700; border-radius: 8px;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .sig-submit:hover { opacity: 0.88; }
+  .sig-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sig-feedback {
+    font-size: 12px; text-align: center; padding: 8px;
+    border-radius: 6px; display: none; width: 100%;
+  }
+  .sig-feedback.success { background: #eef4e2; color: var(--cocard-green); display: block; }
+  .sig-feedback.error { background: #fdecea; color: var(--error); display: block; }
+  .sig-typeahead-wrap { position: relative; }
 </style>
 </head>
 <body>
@@ -543,6 +609,15 @@
           onclick="openLead()"
         >↗ Open in Airtable</button>
         <div id="lead-feedback" style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px;"></div>
+      </div>
+
+      <div class="card" style="--card-accent: var(--cocard-blue);">
+        <div class="card-header">
+          <div class="card-title">Send for Signature</div>
+          <span class="card-type type-form">SignWell</span>
+        </div>
+        <div class="card-meta">Select merchant · contact · template · send</div>
+        <button class="btn-launch" style="margin-top:8px;" onclick="openSigModal()">✍ Send Document</button>
       </div>
 
       <div class="card" style="--card-accent: #5a7fa0;">
@@ -648,7 +723,336 @@
 
 </main>
 
+<!-- ── Send for Signature Modal ──────────────────────────────── -->
+<div class="sig-overlay" id="sig-overlay" onclick="closeSigModalOutside(event)">
+  <div class="sig-modal">
+    <div class="sig-modal-header">
+      <h2>Send for Signature</h2>
+      <button class="sig-close" onclick="closeSigModal()">✕</button>
+    </div>
+    <div class="sig-body">
+
+      <!-- Merchant -->
+      <div>
+        <div class="sig-section-label">Merchant</div>
+        <div class="sig-typeahead-wrap" style="margin-top:8px;">
+          <input id="sig-merchant-search" class="sig-input" type="text"
+            placeholder="Type merchant name…" autocomplete="off" />
+          <div class="typeahead-dropdown" id="sig-merchant-dropdown"
+            style="--hover-bg:#dce8f0;--hover-color:#00304F;"></div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <div class="sig-section-label">Contact</div>
+        <select id="sig-contact" class="sig-select" style="margin-top:8px;" disabled>
+          <option value="">— select merchant first —</option>
+        </select>
+      </div>
+
+      <!-- Template -->
+      <div>
+        <div class="sig-section-label">Document Template</div>
+        <select id="sig-template" class="sig-select" style="margin-top:8px;">
+          <option value="">— select template —</option>
+          <option value="77fa648e-95b5-47d5-a162-979bf88139b6">EFT Authorization</option>
+        </select>
+      </div>
+
+      <!-- Banking Info -->
+      <div>
+        <div class="sig-section-label">Bank Account Info</div>
+        <div class="sig-row cols-2" style="margin-top:8px;">
+          <div>
+            <label class="sig-label">Bank Name</label>
+            <input id="sig-bank-name" class="sig-input" type="text" placeholder="First National Bank" />
+          </div>
+          <div>
+            <label class="sig-label">Payment Method</label>
+            <select id="sig-payment-method" class="sig-select">
+              <option value="">— select —</option>
+              <option value="Checking">Checking</option>
+              <option value="Savings">Savings</option>
+            </select>
+          </div>
+        </div>
+        <div class="sig-row cols-2" style="margin-top:10px;">
+          <div>
+            <label class="sig-label">Routing Number</label>
+            <input id="sig-routing" class="sig-input" type="text" placeholder="9 digits" maxlength="9" />
+          </div>
+          <div>
+            <label class="sig-label">Account Number</label>
+            <input id="sig-account" class="sig-input" type="text" placeholder="Account number" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Details -->
+      <div>
+        <div class="sig-section-label">Payment Details</div>
+        <div class="sig-row cols-2" style="margin-top:8px;">
+          <div>
+            <label class="sig-label">Payment Amount ($)</label>
+            <input id="sig-amount" class="sig-input" type="number" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div>
+            <label class="sig-label">Payment Start Date</label>
+            <input id="sig-start-date" class="sig-input" type="date" />
+          </div>
+        </div>
+        <div class="sig-row cols-3" style="margin-top:10px;">
+          <div>
+            <label class="sig-label">Frequency</label>
+            <select id="sig-frequency" class="sig-select">
+              <option value="">— select —</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Annually">Annually</option>
+            </select>
+          </div>
+          <div>
+            <label class="sig-label">Force Payment</label>
+            <select id="sig-force" class="sig-select">
+              <option value="">— select —</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="sig-label">Participant Type</label>
+            <select id="sig-participant" class="sig-select">
+              <option value="">— select —</option>
+              <option value="New Participant">New</option>
+              <option value="Change to Participant">Change</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="sig-footer" style="flex-direction:column;">
+      <button class="sig-submit" id="sig-submit-btn" onclick="submitSig()">✍ Send for Signature</button>
+      <div class="sig-feedback" id="sig-feedback"></div>
+    </div>
+  </div>
+</div>
+
 <script>
+// ── Send for Signature ───────────────────────────────────────
+const SIG_WEBHOOK_URL = 'https://karenwidas.app.n8n.cloud/webhook/send-for-signature';
+const CONTACTS_TABLE_ID = 'tblR80p5dAGRBx68K';
+const CONTACTS_NAME_FIELD_ID = 'fldXW2KwH9nKHFf7E'; // Full Name (formula)
+const CONTACTS_EMAIL_FIELD_ID = 'fldNMGwxfHZaAA0zQ';
+const CONTACTS_COMPANY_FIELD_ID = 'fldgHAbjybm0T8imT'; // Company (linked)
+
+let sigMerchantId = null;
+let sigMerchantName = null;
+let sigMerchantDebounce;
+let sigContacts = [];
+
+function openSigModal() {
+  document.getElementById('sig-overlay').classList.add('open');
+  document.getElementById('sig-merchant-search').focus();
+}
+
+function closeSigModal() {
+  document.getElementById('sig-overlay').classList.remove('open');
+  resetSigModal();
+}
+
+function closeSigModalOutside(e) {
+  if (e.target === document.getElementById('sig-overlay')) closeSigModal();
+}
+
+function resetSigModal() {
+  sigMerchantId = null;
+  sigMerchantName = null;
+  sigContacts = [];
+  document.getElementById('sig-merchant-search').value = '';
+  document.getElementById('sig-merchant-dropdown').classList.remove('open');
+  const contactSel = document.getElementById('sig-contact');
+  contactSel.innerHTML = '<option value="">— select merchant first —</option>';
+  contactSel.disabled = true;
+  document.getElementById('sig-template').value = '';
+  document.getElementById('sig-bank-name').value = '';
+  document.getElementById('sig-payment-method').value = '';
+  document.getElementById('sig-routing').value = '';
+  document.getElementById('sig-account').value = '';
+  document.getElementById('sig-amount').value = '';
+  document.getElementById('sig-start-date').value = '';
+  document.getElementById('sig-frequency').value = '';
+  document.getElementById('sig-force').value = '';
+  document.getElementById('sig-participant').value = '';
+  const fb = document.getElementById('sig-feedback');
+  fb.className = 'sig-feedback';
+  fb.textContent = '';
+  document.getElementById('sig-submit-btn').disabled = false;
+}
+
+// Merchant typeahead inside modal
+document.getElementById('sig-merchant-search').addEventListener('input', function () {
+  clearTimeout(sigMerchantDebounce);
+  sigMerchantId = null;
+  const q = this.value.trim();
+  const contactSel = document.getElementById('sig-contact');
+  contactSel.innerHTML = '<option value="">— select merchant first —</option>';
+  contactSel.disabled = true;
+  if (q.length < 2) { document.getElementById('sig-merchant-dropdown').classList.remove('open'); return; }
+  sigMerchantDebounce = setTimeout(() => fetchSigMerchants(q), 300);
+});
+
+document.getElementById('sig-merchant-search').addEventListener('blur', function () {
+  setTimeout(() => document.getElementById('sig-merchant-dropdown').classList.remove('open'), 150);
+});
+
+async function fetchSigMerchants(q) {
+  const dd = document.getElementById('sig-merchant-dropdown');
+  dd.innerHTML = '<div class="typeahead-empty">Searching…</div>';
+  dd.classList.add('open');
+  try {
+    const res = await fetch(`${MERCHANT_SEARCH_URL}?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!data.length) { dd.innerHTML = '<div class="typeahead-empty">No matches found</div>'; return; }
+    dd.innerHTML = data.map(c =>
+      `<div class="typeahead-item" data-id="${c.id}" data-name="${c.name}">${c.name}</div>`
+    ).join('');
+    dd.querySelectorAll('.typeahead-item').forEach(item => {
+      item.addEventListener('mousedown', () => selectSigMerchant(item.dataset.id, item.dataset.name));
+    });
+  } catch (e) {
+    dd.innerHTML = '<div class="typeahead-empty">Error loading results</div>';
+  }
+}
+
+async function selectSigMerchant(id, name) {
+  sigMerchantId = id;
+  sigMerchantName = name;
+  document.getElementById('sig-merchant-search').value = name;
+  document.getElementById('sig-merchant-dropdown').classList.remove('open');
+  await loadSigContacts(id);
+}
+
+async function loadSigContacts(companyId) {
+  const contactSel = document.getElementById('sig-contact');
+  contactSel.innerHTML = '<option value="">Loading…</option>';
+  contactSel.disabled = true;
+  const apiKey = localStorage.getItem('at_tk');
+  if (!apiKey) {
+    contactSel.innerHTML = '<option value="">API key not set</option>';
+    return;
+  }
+  try {
+    const formula = encodeURIComponent(`FIND("${companyId}", ARRAYJOIN({Company}))`);
+    const url = `https://api.airtable.com/v0/apppYzklXP1tsbWnF/${CONTACTS_TABLE_ID}` +
+      `?filterByFormula=${formula}` +
+      `&fields[]=${encodeURIComponent(CONTACTS_NAME_FIELD_ID)}` +
+      `&fields[]=${encodeURIComponent(CONTACTS_EMAIL_FIELD_ID)}` +
+      `&returnFieldsByFieldId=true&maxRecords=50`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+    const data = await res.json();
+    sigContacts = data.records || [];
+    if (!sigContacts.length) {
+      contactSel.innerHTML = '<option value="">No contacts found</option>';
+      return;
+    }
+    contactSel.innerHTML = '<option value="">— select contact —</option>' +
+      sigContacts.map(r => {
+        const n = r.fields[CONTACTS_NAME_FIELD_ID] || '';
+        const e = r.fields[CONTACTS_EMAIL_FIELD_ID] || '';
+        return `<option value="${r.id}" data-email="${e}">${n}${e ? ' — ' + e : ''}</option>`;
+      }).join('');
+    contactSel.disabled = false;
+  } catch (e) {
+    contactSel.innerHTML = '<option value="">Error loading contacts</option>';
+  }
+}
+
+async function submitSig() {
+  const btn = document.getElementById('sig-submit-btn');
+  const fb = document.getElementById('sig-feedback');
+  fb.className = 'sig-feedback';
+  fb.textContent = '';
+
+  // Gather values
+  const templateId   = document.getElementById('sig-template').value;
+  const contactId    = document.getElementById('sig-contact').value;
+  const bankName     = document.getElementById('sig-bank-name').value.trim();
+  const payMethod    = document.getElementById('sig-payment-method').value;
+  const routing      = document.getElementById('sig-routing').value.trim();
+  const account      = document.getElementById('sig-account').value.trim();
+  const amount       = document.getElementById('sig-amount').value;
+  const startDate    = document.getElementById('sig-start-date').value;
+  const frequency    = document.getElementById('sig-frequency').value;
+  const force        = document.getElementById('sig-force').value;
+  const participant  = document.getElementById('sig-participant').value;
+
+  // Validation
+  if (!sigMerchantId)  { showSigError('Please select a merchant.'); return; }
+  if (!contactId)      { showSigError('Please select a contact.'); return; }
+  if (!templateId)     { showSigError('Please select a document template.'); return; }
+  if (!bankName)       { showSigError('Bank name is required.'); return; }
+  if (!payMethod)      { showSigError('Payment method is required.'); return; }
+  if (!routing || routing.length !== 9) { showSigError('Routing number must be 9 digits.'); return; }
+  if (!account)        { showSigError('Account number is required.'); return; }
+  if (!amount)         { showSigError('Payment amount is required.'); return; }
+  if (!startDate)      { showSigError('Payment start date is required.'); return; }
+  if (!frequency)      { showSigError('Payment frequency is required.'); return; }
+  if (!force)          { showSigError('Force payment selection is required.'); return; }
+  if (!participant)    { showSigError('Participant type is required.'); return; }
+
+  // Get contact email from select option
+  const contactOpt = document.getElementById('sig-contact').selectedOptions[0];
+  const contactEmail = contactOpt ? contactOpt.dataset.email : '';
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const payload = {
+      merchant_id:    sigMerchantId,
+      merchant_name:  sigMerchantName,
+      contact_id:     contactId,
+      contact_name:   contactOpt ? contactOpt.text.split(' — ')[0] : '',
+      contact_email:  contactEmail,
+      template_id:    templateId,
+      bank_name:      bankName,
+      payment_method: payMethod,
+      routing_number: routing,
+      account_number: account,
+      payment_amount: parseFloat(amount).toFixed(2),
+      payment_start_date: startDate,
+      payment_frequency:  frequency,
+      force_payment:      force,
+      participant_type:   participant
+    };
+
+    const res = await fetch(SIG_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    fb.className = 'sig-feedback success';
+    fb.textContent = `Document sent to ${contactEmail || 'contact'} via SignWell.`;
+    btn.textContent = '✓ Sent';
+    setTimeout(() => closeSigModal(), 2500);
+  } catch (e) {
+    showSigError('Send failed — check n8n or SignWell and try again.');
+    btn.disabled = false;
+    btn.textContent = '✍ Send for Signature';
+  }
+}
+
+function showSigError(msg) {
+  const fb = document.getElementById('sig-feedback');
+  fb.className = 'sig-feedback error';
+  fb.textContent = msg;
+}
+
 const WORKFLOWS = [
   { id: 'LoDZG07dKmT63tfz',       statusEl: 'status-LoDZG07dKmT63tfz' }, // TSYS Spreadsheet Comparison
   { id: '9GacF-ENq9gJros7yszgp',   statusEl: 'status-9GacF-ENq9gJros7yszgp' }, // KB Processor Info
