@@ -7,7 +7,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [250, 300],
-      "notes": "Receives POST { leadId, leadName } from Airtable automation Run Script when a new Leads record is created",
+      "notes": "Receives POST { leadId } from Airtable automation when a new Leads record is created. leadName is fetched directly from Airtable in the next node to avoid null values from the automation script.",
       "parameters": {
         "httpMethod": "POST",
         "path": "lead-created",
@@ -16,16 +16,34 @@
       }
     },
     {
+      "id": "a1000001-0000-0000-0000-000000000005",
+      "name": "Get Lead Name",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "notes": "Fetches the lead record from Airtable by leadId to get the Lead Name. Avoids relying on the automation script to pass leadName correctly.",
+      "parameters": {
+        "operation": "get",
+        "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
+        "table": { "__rl": true, "value": "tblQe6TUV4DayDMUQ", "mode": "id" },
+        "id": "={{ $('Webhook').item.json.body.leadId }}",
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": { "id": "", "name": "Airtable" }
+      }
+    },
+    {
       "id": "a1000001-0000-0000-0000-000000000002",
       "name": "Create Dropbox Folder",
       "type": "n8n-nodes-base.dropbox",
       "typeVersion": 1,
-      "position": [450, 300],
-      "notes": "Creates folder at /_CoCard/_Leads/{Lead Name}/",
+      "position": [650, 300],
+      "notes": "Creates folder at /_CoCard/_Leads/{Lead Name}/ using the Lead Name fetched from Airtable.",
       "parameters": {
         "resource": "folder",
         "operation": "create",
-        "path": "=/_CoCard/_Leads/{{ $json.body.leadName }}"
+        "path": "=/_CoCard/_Leads/{{ $json.fields['Lead Name'] }}"
       },
       "credentials": {
         "dropboxOAuth2Api": { "id": "", "name": "Dropbox" }
@@ -36,8 +54,8 @@
       "name": "Write Folder Path",
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2,
-      "position": [650, 300],
-      "notes": "Writes the Dropbox folder path back to the lead record so downstream workflows know where to upload files",
+      "position": [850, 300],
+      "notes": "Writes the Dropbox folder path back to the lead record so downstream workflows know where to upload files.",
       "parameters": {
         "operation": "update",
         "base": { "__rl": true, "value": "apppYzklXP1tsbWnF", "mode": "id" },
@@ -46,7 +64,7 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Dropbox Folder Path": "=/_CoCard/_Leads/{{ $('Webhook').item.json.body.leadName }}/"
+            "Dropbox Folder Path": "=/_CoCard/_Leads/{{ $('Get Lead Name').item.json.fields['Lead Name'] }}/"
           },
           "matchingColumns": [],
           "schema": []
@@ -60,6 +78,9 @@
   ],
   "connections": {
     "Webhook": {
+      "main": [[{ "node": "Get Lead Name", "type": "main", "index": 0 }]]
+    },
+    "Get Lead Name": {
       "main": [[{ "node": "Create Dropbox Folder", "type": "main", "index": 0 }]]
     },
     "Create Dropbox Folder": {
