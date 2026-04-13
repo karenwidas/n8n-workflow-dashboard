@@ -1,6 +1,6 @@
 # Systems Inventory — DevPlus / CoCard Operations
 
-**Last updated:** 2026-04-13 (repo move + SignWell workflows added)
+**Last updated:** 2026-04-13 — added leads/merchant-form, leads/decrypt-tool, eula, privacy-policy, icons/preview; added convert-lead, send-form, merchant-form-submit n8n exports; removed quote-builder (replaced by merchant-form)
 **Maintained by:** Claude Code scheduled agent (weekly, Mondays)
 
 ---
@@ -30,7 +30,11 @@
 | `index.html` | Main dashboard — card grid, workflow status, chat panel |
 | `ticket-manager/ticket-manager.html` | Ticket management app |
 | `forecast/forecast.html` | Ticket forecasting / scheduling tool |
-| `leads/quote-builder.html` | Quote builder for leads (new, in progress) |
+| `leads/merchant-form.html` | Public-facing merchant application form |
+| `leads/decrypt-tool.html` | Tool to decrypt merchant form submission data |
+| `eula.html` | End User License Agreement |
+| `privacy-policy.html` | Privacy policy page |
+| `icons/preview.html` | Icon set preview / reference |
 | `n8n/` | n8n workflow JSON exports |
 | `airtable/` | Airtable schema reference |
 | `CLAUDE.md` | Claude Code project instructions / tech spec |
@@ -69,6 +73,9 @@
 | `n8n/crm/signwell-completed.json` | Handle SignWell completion webhook |
 | `n8n/crm/signwell-templates.json` | Fetch available SignWell templates |
 | `n8n/crm/lead-created.json` | CRM lead created trigger |
+| `n8n/crm/convert-lead.json` | Convert lead to merchant account |
+| `n8n/crm/send-form.json` | Send merchant application form |
+| `n8n/crm/merchant-form-submit.json` | Handle merchant form submission |
 
 ---
 
@@ -101,4 +108,4 @@
 - [ ] Fix `Code: Find FM Season` node — debug filterByFormula for 2026 seasons
 - [ ] Swap Gmail sender: `kwidas@me.com` → `support@imgservices.com` in FM workflows
 - [ ] QuickBooks production keys — waiting on Intuit compliance portal bug resolution
-- [ ] Quote builder (`leads/quote-builder.html`) — in progress
+- [ ] Merchant form (`leads/merchant-form.html`) — verify end-to-end submission flow
