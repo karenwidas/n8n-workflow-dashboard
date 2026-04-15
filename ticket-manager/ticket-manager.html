@@ -5,10 +5,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ticket Manager — CRM</title>
-<link rel="manifest" href="/ticket-manager/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00304F">
-<link rel="apple-touch-icon" href="/icons/icon-ticket-manager.svg">
-<link rel="icon" type="image/svg+xml" href="/icons/icon-ticket-manager.svg">
+<link rel="apple-touch-icon" href="../icons/icon-ticket-manager.svg">
+<link rel="icon" type="image/svg+xml" href="../icons/icon-ticket-manager.svg">
 <style>
 :root {
   --cocard-blue: #00304F;
@@ -1941,7 +1941,7 @@ init();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  navigator.serviceWorker.register('./sw.js', { scope: './' });
 }
 </script>
 </body>

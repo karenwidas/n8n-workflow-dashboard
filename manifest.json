@@ -2,14 +2,14 @@
   "name": "CoCard Dashboard",
   "short_name": "Dashboard",
   "description": "CoCard operations dashboard",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/DevPlus/",
+  "scope": "/DevPlus/",
   "display": "standalone",
   "background_color": "#eef2f5",
   "theme_color": "#00304F",
   "icons": [
     {
-      "src": "/icons/icon-dashboard.svg",
+      "src": "/DevPlus/icons/icon-dashboard.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

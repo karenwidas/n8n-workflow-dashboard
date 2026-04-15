@@ -2,14 +2,14 @@
   "name": "Ticket Manager",
   "short_name": "Tickets",
   "description": "CoCard ticket management",
-  "start_url": "/ticket-manager/ticket-manager.html",
-  "scope": "/ticket-manager/",
+  "start_url": "/DevPlus/ticket-manager/ticket-manager.html",
+  "scope": "/DevPlus/ticket-manager/",
   "display": "standalone",
   "background_color": "#eef2f5",
   "theme_color": "#00304F",
   "icons": [
     {
-      "src": "/icons/icon-ticket-manager.svg",
+      "src": "/DevPlus/icons/icon-ticket-manager.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

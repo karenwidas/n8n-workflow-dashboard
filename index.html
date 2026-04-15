@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00304F">
-<link rel="apple-touch-icon" href="/icons/icon-dashboard.svg">
-<link rel="icon" type="image/svg+xml" href="/icons/icon-dashboard.svg">
+<link rel="apple-touch-icon" href="icons/icon-dashboard.svg">
+<link rel="icon" type="image/svg+xml" href="icons/icon-dashboard.svg">
 <style>
   :root {
     /* CoCard Brand Colors */
@@ -1406,7 +1406,7 @@ refreshAll();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  navigator.serviceWorker.register('./sw.js', { scope: './' });
 }
 </script>
 </body>

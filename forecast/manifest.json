@@ -2,14 +2,14 @@
   "name": "CoCard Forecast",
   "short_name": "Forecast",
   "description": "CoCard ticket forecast & available view",
-  "start_url": "/forecast/forecast.html",
-  "scope": "/forecast/",
+  "start_url": "/DevPlus/forecast/forecast.html",
+  "scope": "/DevPlus/forecast/",
   "display": "standalone",
   "background_color": "#eef2f5",
   "theme_color": "#00304F",
   "icons": [
     {
-      "src": "/icons/icon-forecast.svg",
+      "src": "/DevPlus/icons/icon-forecast.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

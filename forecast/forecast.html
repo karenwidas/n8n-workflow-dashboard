@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Forecast — CoCard Tickets</title>
-<link rel="manifest" href="/forecast/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00304F">
-<link rel="apple-touch-icon" href="/icons/icon-forecast.svg">
-<link rel="icon" type="image/svg+xml" href="/icons/icon-forecast.svg">
+<link rel="apple-touch-icon" href="../icons/icon-forecast.svg">
+<link rel="icon" type="image/svg+xml" href="../icons/icon-forecast.svg">
 <style>
   /* ── Reset & Base ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1367,7 +1367,7 @@ function toast(msg, type='ok') {
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  navigator.serviceWorker.register('./sw.js', { scope: './' });
 }
 </script>
 </body>
