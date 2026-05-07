@@ -1303,6 +1303,7 @@ async function addTask() {
     dpSet('nt-tdue', '');
     document.getElementById('nt-tnotes').value = '';
     document.getElementById('add-task-area').classList.remove('show');
+    await syncTicketStatus();
     toast('Task added','ok');
   } catch(e) { toast(e.message,'err'); }
 }
@@ -1363,6 +1364,7 @@ async function saveTaskEdit(id) {
     const updated = await atPatch(T_TASK, id, fields);
     patchTaskLocal(id, updated);
     updateTaskList();
+    await syncTicketStatus();
     toast('Task saved','ok');
   } catch(e) { toast(e.message,'err'); }
 }
