@@ -1144,9 +1144,9 @@ async function syncTicketStatus() {
     newStatus = 'Open';
   } else {
     const active = statuses.filter(s => s !== 'Completed');
-    if (active.length && active.every(s => s === 'Waiting on Customer')) newStatus = 'Waiting on Customer';
-    else if (active.length && active.every(s => s === 'Waiting on Office'))   newStatus = 'Waiting on Office';
-    else if (active.length && active.every(s => s === 'Waiting on Others'))   newStatus = 'Waiting on Others';
+    if (active.some(s => s === 'Waiting on Customer')) newStatus = 'Waiting on Customer';
+    else if (active.some(s => s === 'Waiting on Office')) newStatus = 'Waiting on Office';
+    else if (active.some(s => s === 'Waiting on Others')) newStatus = 'Waiting on Others';
     else newStatus = 'Open';
   }
   if (newStatus === currentStatus) return;
