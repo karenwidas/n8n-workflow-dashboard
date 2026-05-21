@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CoCard — Approve Action</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      padding: 40px 48px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 28px;
+    }
+    .merchant {
+      font-size: 22px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 8px;
+    }
+    .action-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 32px;
+      min-height: 20px;
+    }
+    button {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 36px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background .15s;
+    }
+    button:hover:not(:disabled) { background: #1558b0; }
+    button:disabled { background: #aaa; cursor: default; }
+
+    .status {
+      margin-top: 20px;
+      font-size: 15px;
+      color: #333;
+      min-height: 24px;
+    }
+    .status.success { color: #1e7e34; font-weight: 600; }
+    .status.error   { color: #c0392b; }
+
+    /* States */
+    #state-ready  { display: block; }
+    #state-done   { display: none; }
+    .check { font-size: 56px; margin-bottom: 16px; }
+    .done-title { font-size: 20px; font-weight: 700; color: #1e7e34; margin-bottom: 8px; }
+    .done-sub   { font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <!-- Ready state -->
+  <div id="state-ready">
+    <div class="logo">CoCard Operations</div>
+    <div class="merchant" id="merchant-name">Loading…</div>
+    <div class="action-label" id="action-label"></div>
+    <button id="approve-btn">Approve &amp; Send</button>
+    <div class="status" id="status-msg"></div>
+  </div>
+
+  <!-- Done state -->
+  <div id="state-done">
+    <div class="check">✅</div>
+    <div class="done-title">Approved &amp; Sent</div>
+    <div class="done-sub" id="done-merchant"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const params       = new URLSearchParams(window.location.search);
+  const tokenUrl     = params.get("t");    // Trigger.dev waitpoint completion URL
+  const merchantName = params.get("m") || "Unknown merchant";
+  const actionLabel  = params.get("a") || "";
+
+  document.getElementById("merchant-name").textContent = merchantName;
+  document.getElementById("action-label").textContent  = actionLabel;
+
+  if (!tokenUrl) {
+    document.getElementById("status-msg").textContent = "⚠️ Missing token — link may be invalid.";
+    document.getElementById("status-msg").className   = "status error";
+    document.getElementById("approve-btn").disabled   = true;
+    return;
+  }
+
+  document.getElementById("approve-btn").addEventListener("click", async () => {
+    const btn    = document.getElementById("approve-btn");
+    const status = document.getElementById("status-msg");
+
+    btn.disabled        = true;
+    btn.textContent     = "Sending…";
+    status.textContent  = "";
+    status.className    = "status";
+
+    try {
+      // POST to the Trigger.dev waitpoint URL to complete the token.
+      // mode: "no-cors" avoids browser CORS blocking; the request goes through
+      // even though we get an opaque response.
+      await fetch(tokenUrl, {
+        method:  "POST",
+        mode:    "no-cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body:    "approved=true",
+      });
+
+      // Show done state
+      document.getElementById("state-ready").style.display = "none";
+      document.getElementById("state-done").style.display  = "block";
+      document.getElementById("done-merchant").textContent  = merchantName;
+
+    } catch (err) {
+      btn.disabled    = false;
+      btn.textContent = "Approve & Send";
+      status.textContent = "Something went wrong. Please try again.";
+      status.className   = "status error";
+      console.error(err);
+    }
+  });
+}());
+</script>
+</body>
+</html>
